@@ -1,253 +1,283 @@
-
-METHODS = [['q', 'qiskit'], ['p', 'pennylane'], ['c', '']]
-
 import pandas as pd
-import numpy as np
+# import numpy as np
+from pennylane import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 # from pandas.api.types import is_numeric_dtype
 
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+import trimap
+import pacmap
 
 
-class Data: 
-    def __init__(self, data: pd.DataFrame) -> None:
-        """
-        Initialize the data from a given DataFrame.
-
-        Parameters
-        ----------
-        data: pandas.DataFrame
-            The data we want to use to pre-process as a pandas DataFrame
-            
+def transform_X(X: pd.DataFrame, type=None) -> np.array:
+    """
+    This function takes in a pandas dataframe or a regular numpy array and returns a pennylane numpy array.
+    The function can also transform the data using a specified method to reduce the dimensions: 'trimap', 'pacmap', 'tsne', 'pca'.
     
-        Saves
-        -------
-        df : pandas.DataFrame
-            The data.
-        """
+    Parameters:
+    -----------
+    X: pd.DataFrame
+        The input data
+    type: str or None
+        The type of transformation to apply to the data. 
+        The options are: 'trimap', 'pacmap', 'tsne', 'pca', 'none', None
+
+    Returns:
+    --------
+    np.array
+        The transformed data
+    """ 
+    if not isinstance(X, (pd.DataFrame)):
+        raise ValueError("X must be a pandas dataframe")
+    
+    types = ['trimap', 'pacmap', 'tsne', 'pca', 'none', None]
+    if type == 'trimap':
+        X = trimap.TRIMAP().fit_transform(X.to_numpy())
+    elif type == 'pacmap':
+        X = pacmap.PaCMAP(n_components=2, n_neighbors=None, MN_ratio=0.5, FP_ratio=2.0).fit_transform(X.to_numpy())
+    elif type == 'tsne':
+        X = TSNE(n_components=2, random_state=42).fit_transform(X.to_numpy())
+    elif type == 'pca':
+        X = PCA(n_components=2).fit_transform(X.to_numpy())
+    elif type == 'none' or type is None:
+        X = X.to_numpy()
+    else:
+        raise ValueError(f"Type must be one of {types}")
+    
+    X = np.array(X, requires_grad=False)
+    # for each do a min-max scaling for each column
+    for i in range(X.shape[1]):
+        X[:, i] = (X[:, i] - np.min(X[:, i])) / (np.max(X[:, i]) - np.min(X[:, i]))
+    return X
+
+
+def train_test_split_custom(df, y_col, test_size: float = 0.2, random_state: int = 42):
+    """
+    Split the data into training and testing sets.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The input data.
+    y_col : str, or pd.DataFrame/np.array
+        The column name of the target variable. Default is 'target'.
+    test_size : float, optional
+        The size of the testing set. Default is 0.2.
+        Has to be between 0.0 and 1.0.
+    random_state : int, optional
+        The random state for splitting the data. Default is 42.
+
+    Returns
+    -------
+    train_X : pandas.DataFrame
+        The training data.
+    test_X : pandas.DataFrame
+        The testing data.
+    train_y : pandas.Series
+        The training target.
+    test_y : pandas.Series
+        The testing target.
+    """
+    if not 0.0 < test_size < 1.0:
+        raise ValueError(f"test_size has to be between 0.0 and 1.0, given test_size={test_size}")
+    if isinstance(y_col, str):
         try:
-            if isinstance(data, pd.DataFrame):
-                self.df = data
-            else:
-                raise ValueError("Invalid data type. Please provide a pandas DataFrame")
-            self.columns_names = self.df.get_columns()
-        except Exception as e:
-            print(e)
-            
+            X = df.drop(columns=[y_col])
+            X = scale_data(X)
+            y = df[y_col]
+        except KeyError:
+            raise KeyError(f"Column {y_col} not found in the dataframe")
+    else:
+        X = df
+        y = y_col
+    y, _ = binary_classifier(y)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+    return X_train, X_test, y_train, y_test
+
+
+# def combine_data(feats_train, Y_train, predictions_train, feats_val, Y_val, predictions_val, num_layers):
+#     """
+#     This function combines the features, target variable, and predictions into a single dataframe.
+#     Features are also known as the input data or the observations.
+
+#     Parameters:
+#     -----------
+#     feats_train: np.array
+#         The training features
+#     Y_train: np.array
+#         The training target variable
+#     predictions_train: np.array
+#         The training predictions
+#     feats_val: np.array
+#         The validation features
+#     Y_val: np.array
+#         The validation target variable
+#     predictions_val: np.array
+#         The validation predictions
+#     num_layers: int
+#         The number of layers in the model (number of features)
     
-    def __str__(self, n=5) -> str:
-        """
-        Print the first 5 rows of the dataframe by default.
+#     Returns:
+#     --------
+#     pd.DataFrame
+#         The combined data
+#     """
+#     train_dat = np.c_[feats_train,
+#                       Y_train, predictions_train]
+#     test_dat = np.c_[feats_val, 
+#                         Y_val, predictions_val]
+#     data = np.r_[train_dat, test_dat]
+#     df = pd.DataFrame(data)
+#     col_names = [f"Feature_{i}" for i in range(num_layers)] + ["Y", "Prediction"]
+#     df.columns = col_names
+#     return df
+    
 
-        If the training testing split is done we will print out those dataframes instead of the original data. 
+def binary_classifier (Y: np.array) -> tuple:
+    """
+    This function takes in the target variable and returns a binary class.
 
-        Parameters
-        ----------
-        n : int
-            The number of rows to print (has to be a number between 0 and the number of rows in the dataframe).
-            Default is 5.
-            If n is greater than the number of rows in the dataframe, we will print all the rows.
-            If n is less than 0, we will print an error message.
-        """
-        if n > len(self.df):
-            n = len(self.df)
-        elif n < 0:
-            raise ValueError("Invalid number of rows. Please provide a number between 0 and the number of rows in the dataframe.")
-
-        if hasattr(self, 'train_df'):
-            all_prints = [
-                self.train_df.head(n).to_string(),
-                self.test_df.head(n).to_string()
-            ]
-            return '\n\n'.join(all_prints)
-        else:
-            return self.df.head(n).to_string()
-
-    def __len__(self) -> int:
-        """
-        Return the number of rows of the dataframe.
-
-        If the training testing split is done we will return the length of the training dataframe instead of the original data.
-
-        Returns
-        -------
-        int: 
-            The number of rows of the dataframe. 
-        tuple: (int, int)
-            The number of rows of the training and testing dataframes.
-            The first return is the number of rows of the training dataframe.
-            The second return is the number of rows of the testing dataframe.
-        """
-        return len(self.df)
+    Parameters:
+    -----------
+    Y: np.array
+        The target variable
         
-    def __getitem__(self, col: str) -> pd.Series:
-        """
-        Return the column of the dataframe.
+    Returns:
+    --------
+    tuple: (np.array, dict)
+        The binary class and the mapping of the original classes
 
-        Parameters
-        ----------
-        col : str
-            The column name.
+    Raises:
+    -------
+    ValueError
+        If the target variable does not have exactly two classes
 
-        Returns
-        -------
-        pandas.Series: 
-            The column of the dataframe.
-        """
-        return self.df[col]
-    
-    # I do not have a setitem method because I do not want to change the data in the dataframe.
-    
-    def get_data(self):
-        """
-        Get the orginal dataframe.
+    """
+    if len(np.unique(Y)) != 2:
+        raise ValueError("Y must be a binary class")
+    else:
+        y_classes = np.unique(Y).tolist()
+        mapping = {y_classes[0]: -1, y_classes[1]: 1}
+        Y = np.array([mapping[y] for y in Y], requires_grad=False)
+    return Y, mapping
 
-        Returns
-        -------
-        pandas.DataFrame: 
-            The original dataframe.
-        """
-        return self.df
-    
-    def get_train_test_data(self):
-        """
-        Get the training and testing dataframes.
+def back_trainsform (Y: np.array, mapping: dict) -> np.array:
+    """
+    This function takes in the target variable and returns the original classes.
 
-        Returns 
-        -------
-        A tuple of dataframes.
-        tuple: (pandas.DataFrame, pandas.DataFrame)
-            The first return is the training dataframe.
-            The second return is the testing dataframe.
-        """
-        if hasattr(self, 'train_df'):
-            return (self.train_df, self.test_df)
-        else:
-            raise ValueError("Train test split has not been done yet.")
-
-    def split_train_test(self, test_size=0.2, y_col=None, method='c'):
-        """
-        Split the data into training and testing sets.
-
-        Parameters
-        ----------
-        test_size : float
-            The size of the testing set. Default is 0.2.
-            This is the proportion/percentage of number of rows in the dataset to include in the test split.
-        y_col : str, optional
-            The column name of the target variable. Default is None.
-            If None, the data is split into training and testing sets.
-        method : str, optional
-            The method to use for preprocessing.
-            Options are ['q', 'qiskit', 'p', 'pennylane'] for quantum pre-processing or ['c', 'classical'] for classical pre-processing.
-            Default is 'c' or 'classical'.
-
-            
-        Saves
-        -------
-        If we have a target variable:
-            train_X : pandas.DataFrame
-                The training data without the target variable.
-            test_X : pandas.DataFrame
-                The testing data without the target variable.
-            train_y : pandas.Series
-                The training target variable.
-            test_y : pandas.Series
-                The testing target variable.
-        If we do not have a target variable:
-            train_df : pandas.DataFrame
-                The training data.
-            test_df : pandas.DataFrame
-                The testing data.
-        """
-        self.pre_process(method=method)
-        if y_col:
-            y = self.df[y_col]
-            X = self.df.drop(columns=[y_col])
-            train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=test_size)
-            self.train_X = train_X
-            self.test_X = test_X
-            self.train_y = train_y
-            self.test_y = test_y
-        else:
-            print(self.df.head())
-            train_df, test_df = train_test_split(self.df, test_size=test_size)
-            self.train_df = train_df
-            self.test_df = test_df
-    
-    def pre_process(self, method='c'):
-        """
-        Preprocess the data in either classical or quantum way.
-
-        Parameters
-        ----------
-        method : str, optional
-            The method to use for preprocessing. 
-            Options are ['q', 'qiskit', 'p', 'pennylane'] for quantum pre-processing or ['c', 'classical'] for classical pre-processing.
-            Default is 'c' or 'classical'.
-
-
-        Saves
-        -------
-        method: str
-            The method used for preprocessing the data.
-            Helps keep the methods consistent for encoding the data.
-        df : pandas.DataFrame
-            The preprocessed data.
-        """
-        self.method = method
-        if method in METHODS[0] or method in METHODS[1]:
-            self.df = self.q_preprocess_data(self.df)
-        elif method in METHODS[2]:
-            self.df = self.c_preprocess_data(self.df)
-        else:
-            raise ValueError("Invalid method. Choose from ['q', 'qiskit', 'p', 'pennylane'] for quantum pre-processing or ['c', 'classical'] for classical pre-processing.")
+    Parameters:
+    -----------
+    Y: np.array
+        The target variable
+    mapping: dict
+        The mapping of the original classes
         
-    def q_preprocess_data(self):
-        """
-        Preprocess the data in a quantum way.
+    Returns:
+    --------
+    np.array
+        The original classes
 
-        Returns
-        -------
-        df : pandas.DataFrame
-            The preprocessed data.
-        """
-        pass
-    
-    def get_columns(self):
-        """
-        Get the columns of the dataframe.
+    Raises:
+    -------
+    ValueError
+        If the target variable does not have exactly two classes
 
-        Returns
-        -------
-        list: 
-            The columns of the dataframe.
-        """
-        self.columns_names = self.df.columns.tolist()
-    
-    
-    def c_preprocess_data(self, method='c'):
-        """
-        Preprocess the data in a classical way.
+    """
+    if len(np.unique(Y)) != 2:
+        raise ValueError("Y must be a binary class")
+    else:
+        mapping = {v: k for k, v in mapping.items()}
+        Y = np.array([mapping[y] for y in Y], requires_grad=False)
+    return Y
 
-        Takes the object columns and converts them to categorical data which is then One-Hot Encoded which is a binary encoding method.
-        Takes any numeric columns and scales with min-max scaling method which will have a range of 0 to 1.
 
-        Please do not use any date time columns as it will not be preprocessed.
+# CML Specific Pre-Processing Functions
 
-        Saves
-        -------
-        df : pandas.DataFrame
-            Updates the dataframe with the preprocessed data.
-        """
-        if not hasattr(self, 'columns_names'):
-            self.get_columns()
-            
-        for col in self.columns_names:
-            if pd.api.types.is_object_dtype(self.df[col]):
-                self.df[col] = pd.Categorical(self.df[col])
-                self.df[col] = self.df[col].cat.codes
-                self.df
-            if pd.api.types.is_numeric_dtype(self.df[col]):
-                self.df[col] = StandardScaler().fit_transform(self.df[col].values.reshape(-1, 1))
-    
+
+def scale_data(df: pd.DataFrame):
+    """
+    Scale the data.
+    We are only working with numeric data, so we will use StandardScaler.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The input data.
+
+    Returns
+    -------
+    scaled_data : pandas.DataFrame
+        The scaled data.
+    """
+    scaler = StandardScaler()
+    try:
+        scaled_data = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
+    except ValueError as e:
+        print(f"Error: {e}")
+        print("Make sure that the data contains only numeric columns.")
+        scaled_data = df
+    return scaled_data
+
+
+# QML Specific Pre-Processing Functions
+
+def get_angles(x: np.array) -> np.array:
+    """
+    This function takes in a numpy array and returns the angles for the state preparation circuit.
+
+    Parameters:
+    -----------
+    x: np.array
+        The input data
+
+    Returns:
+    --------
+    np.array
+        The angles for the state preparation circuit
+    """
+    beta0 = 2 * np.arcsin(np.sqrt(x[1] ** 2) / np.sqrt(x[0] ** 2 + x[1] ** 2 + 1e-12))
+    beta1 = 2 * np.arcsin(np.sqrt(x[3] ** 2) / np.sqrt(x[2] ** 2 + x[3] ** 2 + 1e-12))
+    beta2 = 2 * np.arcsin(np.linalg.norm(x[2:]) / np.linalg.norm(x))
+
+    return np.array([beta2, -beta1 / 2, beta1 / 2, -beta0 / 2, beta0 / 2])
+
+def padding_and_normalization(X: np.array, c=0.1):
+    """
+    Pads out the input data with a constant value of c. The latent dimensions (padded values) ensure that the normalization does not erase any information on the length of the vectors, and keep the features distinguishable. Then we normalize the data by dividing by the norm of each row entry vectors.
+
+    Parameters:
+    -----------
+    X: np.array
+        The input data
+
+    Returns:
+    --------
+    np.array
+        The padded and normalized data
+    """
+    padding = np.ones((len(X), 2)) * c
+    X_pad = np.c_[X, padding]
+    normalization = np.sqrt(np.sum(X_pad**2, -1))
+    return (X_pad.T / normalization).T
+
+def feature_map(X: np.array) -> np.array:
+    """
+    This function takes in the input data and returns the new features.
+
+    Parameters:
+    -----------
+    X: np.array
+        The input data
+
+    Returns:
+    --------
+    np.array
+        The new features
+    """
+    return np.array([get_angles(x) for x in X])
+

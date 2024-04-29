@@ -5,7 +5,9 @@ QMLvCML
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/QMLvCML/branch/main/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/QMLvCML/branch/main)
 
 
-A short description of the project (less than one line).
+This package is to use a dataset and compare a Quantum based Classifier that is a Machine Learning Algorithm vs a Classical Machine Learning Algorithm.
+
+The dataset by default that this package has access to is from [Kaggle Banana Dataset](https://www.kaggle.com/datasets/l3llff/banana)
 
 ### Copyright
 

@@ -4,7 +4,12 @@ dependencies:
     # Base depends
   - python
   - pip
-
+  - numpy
+  - pandas
+  - pennylane
+  - scikit-learn
+  - trimap
+  - pacmap
 
 
     # Pip-only installs

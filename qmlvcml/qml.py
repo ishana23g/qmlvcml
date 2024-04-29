@@ -9,32 +9,16 @@ from sklearn.decomposition import PCA
 import trimap
 import pacmap
 
+import seaborn as sns   
+from sklearn.metrics import confusion_matrix
+
 import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
 
+from pre_processing import *
 
 # NOTE the numpy array used in this quantum process is from pennylane, not default from numpy. 
 
-def get_angles(x: np.array) -> np.array:
-    """
-    This function takes in a numpy array and returns the angles for the state preparation circuit.
-
-    Parameters:
-    -----------
-    x: np.array
-        The input data
-
-    Returns:
-    --------
-    np.array
-        The angles for the state preparation circuit
-    """
-    beta0 = 2 * np.arcsin(np.sqrt(x[1] ** 2) / np.sqrt(x[0] ** 2 + x[1] ** 2 + 1e-12))
-    beta1 = 2 * np.arcsin(np.sqrt(x[3] ** 2) / np.sqrt(x[2] ** 2 + x[3] ** 2 + 1e-12))
-    beta2 = 2 * np.arcsin(np.linalg.norm(x[2:]) / np.linalg.norm(x))
-
-    return np.array([beta2, -beta1 / 2, beta1 / 2, -beta0 / 2, beta0 / 2])
 
 
 def state_preparation(a: np.array):
@@ -124,8 +108,6 @@ def variational_classifier(weights: np.array, bias: np.array, x: np.array, isPlo
     float
         The output of the circuit
     """
-
-
     if isPlot:
         qml.draw(circuit)(weights, x)
     return circuit(weights, x) + bias
@@ -147,8 +129,6 @@ def square_loss(labels: np.array, predictions: np.array) -> float:
     float
         The square loss between the labels and the predictions
     """
-
-
     # We use a call to qml.math.stack to allow subtracting the arrays directly
     return np.mean((labels - qml.math.stack(predictions)) ** 2)
 
@@ -200,65 +180,6 @@ def cost(weights: np.array, bias: np.array, X: np.array, Y: np.array) -> float:
     return square_loss(Y, predictions)
 
 
-def transform_X(X: pd.DataFrame, type=None) -> np.array:
-    """
-    This function takes in a pandas dataframe or a regular numpy array and returns a pennylane numpy array.
-    The function can also transform the data using a specified method to reduce the dimensions: 'trimap', 'pacmap', 'tsne', 'pca'.
-    
-    Parameters:
-    -----------
-    X: pd.DataFrame
-        The input data
-    type: str or None
-        The type of transformation to apply to the data. 
-        The options are: 'trimap', 'pacmap', 'tsne', 'pca', 'none', None
-
-    Returns:
-    --------
-    np.array
-        The transformed data
-    """ 
-    if not isinstance(X, (pd.DataFrame)):
-        raise ValueError("X must be a pandas dataframe")
-    
-    types = ['trimap', 'pacmap', 'tsne', 'pca', 'none', None]
-    if type == 'trimap':
-        X = trimap.TRIMAP().fit_transform(X.to_numpy())
-    elif type == 'pacmap':
-        X = pacmap.PaCMAP(n_components=2, n_neighbors=None, MN_ratio=0.5, FP_ratio=2.0).fit_transform(X.to_numpy())
-    elif type == 'tsne':
-        X = TSNE(n_components=2, random_state=42).fit_transform(X.to_numpy())
-    elif type == 'pca':
-        X = PCA(n_components=2).fit_transform(X.to_numpy())
-    elif type == 'none' or type is None:
-        X = X.to_numpy()
-    else:
-        raise ValueError(f"Type must be one of {types}")
-    
-    X = np.array(X, requires_grad=False)
-    # for each do a min-max scaling for each column
-    for i in range(X.shape[1]):
-        X[:, i] = (X[:, i] - np.min(X[:, i])) / (np.max(X[:, i]) - np.min(X[:, i]))
-    return X
-
-def padding_and_normalization(X: np.array, c=0.1):
-    """
-    Pads out the input data with a constant value of c. The latent dimensions (padded values) ensure that the normalization does not erase any information on the length of the vectors, and keep the features distinguishable. Then we normalize the data by dividing by the norm of each row entry vectors.
-
-    Parameters:
-    -----------
-    X: np.array
-        The input data
-
-    Returns:
-    --------
-    np.array
-        The padded and normalized data
-    """
-    padding = np.ones((len(X), 2)) * c
-    X_pad = np.c_[X, padding]
-    normalization = np.sqrt(np.sum(X_pad**2, -1))
-    return (X_pad.T / normalization).T
 
 def apply_model(
     X: np.array,
@@ -267,9 +188,12 @@ def apply_model(
     bias_init: np.array =None,
     steps: int =100,
     batch_size_percent: float =0.5,
+    split_per: float = 0.4,
     isPlot: bool =False,
     isDebug: bool =False,
-    dim_reduce_type: str =None
+    dim_reduce_type: str =None,
+    smoothness: int = 100,
+    seed: int =42
 ):
     """
     This function applies the quantum circuit to the given input data.
@@ -278,8 +202,8 @@ def apply_model(
     -----------
     X: np.array
         The input data
-    Y: np.array
-        The true labels
+    y_col: str
+        The column name of the target variable
     weights_init: np.array
         The initial weights for the circuit
     bias_init: np.array
@@ -287,7 +211,9 @@ def apply_model(
     steps: int
         The number of steps to train the model
     batch_size_percent: float
-        The percentage of the training data to use in each batch
+        The percentage of the training data to use in each batch for the QML model steps
+    split_per: float
+        The percentage of the data to use for the training set (the training-testing split percentage)
     isPlot: bool
         Whether to plot the circuit or not
     isDebug: bool
@@ -295,14 +221,24 @@ def apply_model(
     dim_reduce_type: str
         The type of dimension reduction to apply to the data. 
         The options are: 'trimap', 'pacmap', 'tsne', 'pca', 'none', None
+    smoothness: int
+        The smoothness of the final grid plot
+    seed: int
+        The seed for the random number generator
     """
+
+    # make sure that batch_size_percent and split_per are between 0 and 1
+    if not 0 < batch_size_percent < 1:
+        raise ValueError("batch_size_percent must be between 0 and 1")
+    if not 0 < split_per < 1:
+        raise ValueError("split_per must be between 0 and 1")
+
     figure_size = (10, 10)
     X = transform_X(X, type=dim_reduce_type)
     X_norm = padding_and_normalization(X, c=0.1)
     # the angles for state preparation are the features
-    features = np.array([get_angles(x) for x in X_norm], requires_grad=False)
-    # TODO TESTING -> print(f"First features sample      : {features[0]}")
-
+    features = feature_map(X_norm)
+    
     if isDebug:
         # print out the dimentions, and also the first top 5 samples /head
         print(f"X shape: {X.shape}, Y shape: {Y.shape}")
@@ -312,21 +248,9 @@ def apply_model(
         print(f"X_norm[0]: {X_norm[0]}")
         print(f"Features[0]: {features[0]}")
 
-    # make sure that Y is a is either a boolean or two binary classes. i.e., n_catagories = 2
-    # we have to check what is the type of Y
-    if len(np.unique(Y)) != 2:
-        raise ValueError("Y must be a binary class")
-    else:
-        y_classes = np.unique(Y).tolist()
-        mapping = {y_classes[0]: -1, y_classes[1]: 1}
-        Y = np.array([mapping[y] for y in Y], requires_grad=False)
-
-    # create a train-test split (using X-> features now)
-    split_per = 0.4
-    seed = 42
-
-    feats_train, feats_val, Y_train, Y_val = train_test_split(
-        features, Y, test_size=split_per, random_state=seed
+    # create a train-test split (using X -> features now)
+    feats_train, feats_val, Y_train, Y_val = train_test_split_custom(
+        features, y_col=Y, test_size=split_per, random_state=seed
     )
 
     # get the indecies of the train and test data, to split the X dataset itself for plotting later
@@ -335,6 +259,8 @@ def apply_model(
     )
 
     num_train = len(Y_train)
+
+    Y, _ = binary_classifier(Y)
 
     if isPlot:
         print("Plotting the data")
@@ -426,27 +352,34 @@ def apply_model(
         )
         predictions_val = np.sign(variational_classifier(weights, bias, feats_val.T))
 
+        if isDebug:
+            print(predictions_val)
+
         # Compute accuracy on train and validation set
         acc_train = accuracy(Y_train, predictions_train)
         acc_val = accuracy(Y_val, predictions_val)
 
-        if (it + 1) % 2 == 0:
-            _cost = cost(weights, bias, features, Y)
-            costs.append(_cost)
-            accs.append(acc_val)
+        _cost = cost(weights, bias, features, Y)
+        costs.append(_cost)
+        accs.append(acc_val)
 
-            if isDebug:
-                print(
-                    f"Iter: {it + 1:5d} | Cost: {_cost:0.7f} | "
-                    f"Acc train: {acc_train:0.7f} | Acc validation: {acc_val:0.7f}"
-                )
+        if isDebug:
+            print(
+                f"Iter: {it + 1:5d} | Cost: {_cost:0.7f} | "
+                f"Acc train: {acc_train:0.7f} | Acc validation: {acc_val:0.7f}"
+            )
 
     # check to see if min cost and max accuracy are the same 
     if np.argmin(costs) != np.argmax(accs):
         print("Warning: Minimum cost and maximum accuracy are not at the same iteration")
 
-    weights = weightses[np.argmin(costs)]
-    bias = biases[np.argmin(costs)]
+    weights = weightses[np.argmin(accs)]
+    bias = biases[np.argmin(accs)]
+
+    # final model
+    predictions_train = np.sign(variational_classifier(weights, bias, feats_train.T))
+    predictions_val = np.sign(variational_classifier(weights, bias, feats_val.T))
+
 
     if isDebug:
         print(f"Final weights: {weights}")
@@ -468,36 +401,21 @@ def apply_model(
         plt.tight_layout()
         plt.show()
 
-        
-    train_dat = np.c_[feats_train,
-                      Y_train, predictions_train]
-    test_dat = np.c_[feats_val, 
-                        Y_val, predictions_val]
-    data = np.r_[train_dat, test_dat]
-    df = pd.DataFrame(data)
-    col_names = [f"Feature_{i}" for i in range(num_layers)] + ["Y", "Prediction"]
-    df.columns = col_names
-    
-    del train_dat, test_dat, data
+    # df = combine_data(feats_train, Y_train, predictions_train, feats_val, Y_val, predictions_val, num_layers)
 
     if isPlot:
         plt.figure(figsize=figure_size)
         cm = plt.cm.RdBu
 
         # make data for decision regions
-        smoothness = 500
         xx, yy = np.meshgrid(np.linspace(min(X[:, 0]), max(X[:, 0]), smoothness), 
                              np.linspace(min(X[:, 1]), max(X[:, 1]), smoothness) )
         X_grid = [np.array([x, y]) for x, y in zip(xx.flatten(), yy.flatten())]
 
         # preprocess grid points like data inputs above
-        padding = 0.1 * np.ones((len(X_grid), 2))
-        X_grid = np.c_[X_grid, padding]  # pad each input
-        normalization = np.sqrt(np.sum(X_grid**2, -1))
-        X_grid = (X_grid.T / normalization).T  # normalize each input
-        features_grid = np.array(
-            [get_angles(x) for x in X_grid]
-        )  # angles are new features
+        X_grid = padding_and_normalization(X_grid, c=0.1)
+
+        features_grid = feature_map(X_grid)
         predictions_grid = variational_classifier(weights, bias, features_grid.T, isPlot=isPlot)
         Z = np.reshape(predictions_grid, xx.shape)
 
@@ -514,22 +432,11 @@ def apply_model(
             linewidths=(0.8,),
         )
         plt.colorbar(cnt, ticks=[-1, 0, 1])
-        # X_train = X[train_index]
         X_val = X[test_index]
         # plot data
         for color, label in zip(["b", "r"], [1, -1]):
-            # plot_x = X_train[:, 0][Y_train == label]
-            # plot_y = X_train[:, 1][Y_train == label]
-            # plt.scatter(
-            #     plot_x,
-            #     plot_y,
-            #     c=color,
-            #     marker="o",
-            #     ec="k",
-            #     label=f"class {label} train",
-            # )
-            plot_x = (X_val[:, 0][Y_val == label],)
-            plot_y = (X_val[:, 1][Y_val == label],)
+            plot_x = (X_val[:, 0][predictions_val == label],)
+            plot_y = (X_val[:, 1][predictions_val == label],)
             plt.scatter(
                 plot_x,
                 plot_y,
@@ -542,18 +449,17 @@ def apply_model(
         plt.tight_layout()
         plt.show()
 
-    return weights, bias, costs, accs, df
+        # plot out a confusion matrix too
+        print("Plotting the confusion matrix")
+        plt.figure(figsize=figure_size)
+        cm = confusion_matrix(Y_val, predictions_val)
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+        plt.xlabel("Predicted")
+        plt.ylabel("Actual")
+        plt.title("Confusion Matrix")
+        plt.show()
 
 
-def main():
-    # testing
-    banana_df = pd.read_csv('data/banana_quality.csv')
-    print(banana_df.head())
-    banana_df_y = banana_df['Quality']
-    banana_df_X = banana_df.drop('Quality', axis=1)
-    # banana_df_X_q = qX(banana_df_X)
-    apply_model(banana_df_X, banana_df_y, steps=500, batch_size_percent=.8, isPlot=True, isDebug=True, dim_reduce_type='trimap')
-    pass
+    return weights, bias, costs, accs
 
-if __name__ == "__main__":
-    main()
+
