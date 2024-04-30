@@ -52,22 +52,6 @@ def train_svm(
     model.fit(X_train, y_train)
     return model
 
-def accuracy(confusion: pd.DataFrame):
-    """
-    Calculate the accuracy of the model.
-
-    Parameters
-    ----------
-    confusion : pandas.DataFrame
-        The confusion matrix.
-
-    Returns
-    -------
-    accuracy : float
-        The accuracy of the model.
-    """
-    return np.trace(confusion)/np.sum(np.sum(confusion))
-
 
 def evaluate_model(model: SVC, 
                    X_test: pd.DataFrame, 

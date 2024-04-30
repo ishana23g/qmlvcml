@@ -19,8 +19,6 @@ from pre_processing import *
 
 # NOTE the numpy array used in this quantum process is from pennylane, not default from numpy. 
 
-
-
 def state_preparation(a: np.array):
     """
     This function prepares the quantum state according to the angles provided.
@@ -131,27 +129,6 @@ def square_loss(labels: np.array, predictions: np.array) -> float:
     """
     # We use a call to qml.math.stack to allow subtracting the arrays directly
     return np.mean((labels - qml.math.stack(predictions)) ** 2)
-
-
-def accuracy(labels: np.array, predictions: np.array) -> float:
-    """
-    This function calculates the accuracy between the labels and the predictions.
-    
-    Parameters:
-    -----------
-    labels: np.array
-        The true labels
-    predictions: np.array
-        The predicted labels
-
-    Returns:
-    --------
-    float
-        The accuracy between the labels and the predictions
-    """
-    acc = sum(abs(l - p) < 1e-5 for l, p in zip(labels, predictions))
-    acc = acc / len(labels)
-    return acc
 
 
 def cost(weights: np.array, bias: np.array, X: np.array, Y: np.array) -> float:
@@ -330,39 +307,40 @@ def apply_model(
     accs = []
     weightses = [weights]
     biases = [bias]
+
+    preds = []
     
     batch_size = int(batch_size_percent * num_train)
     for it in range(steps):
         # Update the weights by one optimizer step, using only a limited batch of data
-        
         batch_index = np.random.randint(0, num_train, (batch_size,))
         feats_train_batch = feats_train[batch_index]
         Y_train_batch = Y_train[batch_index]
             
+        # try and find the optimal weights and bias
         weights, bias, _, _ = opt.step(
             cost, weights, bias, feats_train_batch, Y_train_batch
         )
 
+        # Append the weights and bias to the list
         weightses.append(weights)
         biases.append(bias)
 
         # Compute predictions on train and validation set
-        predictions_train = np.sign(
-            variational_classifier(weights, bias, feats_train.T)
-        )
+        predictions_train = np.sign(variational_classifier(weights, bias, feats_train.T))
         predictions_val = np.sign(variational_classifier(weights, bias, feats_val.T))
 
-        if isDebug:
-            print(predictions_val)
-
         # Compute accuracy on train and validation set
-        acc_train = accuracy(Y_train, predictions_train)
-        acc_val = accuracy(Y_val, predictions_val)
+        conf_train = confusion_matrix(Y_train, predictions_train)
+        conf_val = confusion_matrix(Y_val, predictions_val)
+        acc_train = accuracy(conf_train)
+        acc_val = accuracy(conf_val)
 
+        # Compute cost on all samples
         _cost = cost(weights, bias, features, Y)
         costs.append(_cost)
         accs.append(acc_val)
-
+        
         if isDebug:
             print(
                 f"Iter: {it + 1:5d} | Cost: {_cost:0.7f} | "
@@ -373,17 +351,16 @@ def apply_model(
     if np.argmin(costs) != np.argmax(accs):
         print("Warning: Minimum cost and maximum accuracy are not at the same iteration")
 
-    weights = weightses[np.argmin(accs)]
-    bias = biases[np.argmin(accs)]
-
+    best_acc_index = np.argmax(accs)
+    weights = weightses[best_acc_index]
+    bias = biases[best_acc_index]
     # final model
-    predictions_train = np.sign(variational_classifier(weights, bias, feats_train.T))
     predictions_val = np.sign(variational_classifier(weights, bias, feats_val.T))
 
-
-    if isDebug:
-        print(f"Final weights: {weights}")
-        print(f"Final bias: {bias}")
+    print(f"Best accuracy: {accs[best_acc_index]}")
+    print(f"Final weights: {weights}")
+    print(f"Final bias: {bias}")
+    print(f"Final predictions: {predictions_val}")
     
     if isPlot:
         # do a subplot of the costs and accuracies

@@ -100,6 +100,22 @@ def train_test_split_custom(df, y_col, test_size: float = 0.2, random_state: int
     return X_train, X_test, y_train, y_test
 
 
+def accuracy(confusion: pd.DataFrame):
+    """
+    Calculate the accuracy of the model.
+
+    Parameters
+    ----------
+    confusion : pandas.DataFrame
+        The confusion matrix.
+
+    Returns
+    -------
+    accuracy : float
+        The accuracy of the model.
+    """
+    return np.trace(confusion)/np.sum(np.sum(confusion))
+
 # def combine_data(feats_train, Y_train, predictions_train, feats_val, Y_val, predictions_val, num_layers):
 #     """
 #     This function combines the features, target variable, and predictions into a single dataframe.

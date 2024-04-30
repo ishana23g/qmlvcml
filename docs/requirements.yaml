@@ -10,7 +10,8 @@ dependencies:
   - scikit-learn
   - trimap
   - pacmap
-
+  - seaborn
+  - matplotlib
 
     # Pip-only installs
   #- pip:

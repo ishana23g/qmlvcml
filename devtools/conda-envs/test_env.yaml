@@ -3,17 +3,24 @@ channels:
   - conda-forge
 
   - defaults
+
 dependencies:
-    # Base depends
+  # Base depends
   - python
   - pip
 
-    # Testing
+  # Testing
   - pytest
   - pytest-cov
-  - codecov
 
-    # Pip-only installs
-  #- pip:
-  #  - codecov
-
+  # Pip-only installs
+  - pip:
+    - codecov
+    - numpy
+    - pandas
+    - pennylane
+    - scikit-learn
+    - trimap
+    - pacmap
+    - seaborn
+    - matplotlib
