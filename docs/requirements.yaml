@@ -12,6 +12,8 @@ dependencies:
   - pacmap
   - seaborn
   - matplotlib
+  - sphinx
+  - sphinx_rtd_theme
 
     # Pip-only installs
   #- pip:
