@@ -14,6 +14,11 @@ dependencies:
   - matplotlib
   - sphinx
   - sphinx_rtd_theme
+  - pip:
+    - recommonmark
+    - readthedocs-sphinx-ext
+  - mock
+  - pillow
 
     # Pip-only installs
   #- pip:
