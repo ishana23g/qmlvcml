@@ -32,3 +32,4 @@ model, confusion = qmlvcml.apply_svm(banana_df, 'Quality', isPlot=True)
 
 
 
+
