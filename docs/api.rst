@@ -4,4 +4,8 @@ API Documentation
 .. autosummary::
    :toctree: autosummary
 
-   qmlvcml.canvas
+   qmlvcml.data_opening
+   qmlvcml.pre_processing
+   qmlvcml.cml
+   qmlvcml.vqml
+   
