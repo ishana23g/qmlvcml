@@ -19,6 +19,7 @@ dependencies:
   
   # pip only installs
   - pip:
+    - scipy
     - pennylane
     - trimap
     - pacmap
