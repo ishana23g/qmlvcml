@@ -9,10 +9,7 @@ dependencies:
   # packages used
   - numpy
   - pandas
-  - pennylane
   - scikit-learn
-  - trimap
-  - pacmap
   - seaborn
   - matplotlib
   - sphinx
@@ -22,6 +19,9 @@ dependencies:
   
   # pip only installs
   - pip:
+    - pennylane
+    - trimap
+    - pacmap
     - recommonmark
     - readthedocs-sphinx-ext
 
