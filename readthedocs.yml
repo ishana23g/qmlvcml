@@ -2,34 +2,25 @@
 
 version: 2
 
-# build:
-#   os: ubuntu-22.04
-#   # image: latest
-#   tools:
-#     python: "3.11"
-    
-# sphinx:
-#   configuration: docs/conf.py
-
-# python:
-#   install:
-#     - requirements: docs/requirements.yaml
-#     - method: pip
-#       path: .
-#       extra_requirements:
-#         - docs
-#     - method: pip
-#       path: another/package
-
-
 build:
-  image: latest
+  os: ubuntu-22.04
+  # image: latest
+  tools:
+    python: "3.11"
+    
+sphinx:
+  configuration: docs/conf.py
 
 python:
-  version: 3.8
   install:
+    - requirements: docs/requirements.yaml
     - method: pip
       path: .
+      extra_requirements:
+        - docs
+    - method: pip
+      path: another/package
+
 
 conda:
   environment: docs/requirements.yaml
