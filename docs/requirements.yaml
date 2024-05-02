@@ -1,9 +1,12 @@
 name: docs
 channels:
+  #  - defaults
 dependencies:
     # Base depends
   - python
   - pip
+    
+    # 
   - numpy
   - pandas
   - pennylane
@@ -14,12 +17,11 @@ dependencies:
   - matplotlib
   - sphinx
   - sphinx_rtd_theme
+  - mock
+  - pillow
+  
+  # pip only installs
   - pip:
     - recommonmark
     - readthedocs-sphinx-ext
-  - mock
-  - pillow
-
-    # Pip-only installs
-  #- pip:
 

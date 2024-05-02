@@ -12,3 +12,4 @@ from qmlvcml import *
 def test_qmlvcml_imported():
     """Sample test, will always pass so long as import statement worked."""
     assert "qmlvcml" in sys.modules
+

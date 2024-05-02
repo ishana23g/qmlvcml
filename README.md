@@ -2,7 +2,7 @@ QMLvCML
 ==============================
 [//]: # (Badges)
 [![Documentation Status](https://readthedocs.org/projects/qmlvcml/badge/?version=latest)](https://qmlvcml.readthedocs.io/en/latest/?badge=latest)
-[![GitHub Actions Build Status](https://github.com/ishan23g/qmlvcml/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/qmlvcml/actions?query=workflow%3ACI)
+[![GitHub Actions Build Status](https://github.com/ishan23g/qmlvcml/workflows/CI/badge.svg)](https://github.com/ishan23g/qmlvcml/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/QMLvCML/branch/main/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/QMLvCML/branch/main)
 
 
