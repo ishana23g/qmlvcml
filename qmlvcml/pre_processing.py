@@ -2,7 +2,7 @@ import pandas as pd
 # import numpy as np
 from pennylane import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler
 # from pandas.api.types import is_numeric_dtype
 
 from sklearn.manifold import TSNE

@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-from pre_processing import *
+from .pre_processing import *
 
 def train_svm(
     X_train: pd.DataFrame,

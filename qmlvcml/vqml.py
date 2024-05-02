@@ -15,7 +15,7 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from pre_processing import *
+from .pre_processing import *
 
 # NOTE the numpy array used in this quantum process is from pennylane, not default from numpy. 
 
