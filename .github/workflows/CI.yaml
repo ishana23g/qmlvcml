@@ -26,7 +26,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
       - name: Additional info about the build
         shell: bash
         run: |
@@ -57,8 +56,9 @@ jobs:
           pytest -v --cov=qmlvcml --cov-report=xml --color=yes qmlvcml/tests/
 
       - name: CodeCov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
           flags: unittests
           name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
+          token: ${{secrets.CODECOV_TOKEN}}
