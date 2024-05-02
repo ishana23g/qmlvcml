@@ -39,7 +39,7 @@ jobs:
         with:
           environment-file: devtools/conda-envs/test_env.yaml
           environment-name: test
-          channels: conda-forge,defaults
+          channels: conda-forge, defaults
           extra-specs: |
             python=${{ matrix.python-version }}
 
@@ -57,7 +57,7 @@ jobs:
           pytest -v --cov=qmlvcml --cov-report=xml --color=yes qmlvcml/tests/
 
       - name: CodeCov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
           file: ./coverage.xml
           flags: unittests
