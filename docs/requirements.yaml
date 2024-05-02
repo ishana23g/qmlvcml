@@ -22,6 +22,6 @@ dependencies:
   
   # pip only installs
   - pip:
-    - recommonmark
-    - readthedocs-sphinx-ext
+      - recommonmark
+      - readthedocs-sphinx-ext
 
