@@ -6,21 +6,27 @@ build:
   os: ubuntu-22.04
   # image: latest
   tools:
-    python: "3.11"
+    python: "miniconda-latest"
+    # "3.11"
+  jobs:
+    pre_create_environment:
+      - echo "Command run at 'pre_create_environment' step"
+    post_build:
+      - echo "Command run at 'post_build' step"
+      - echo `date`
     
 sphinx:
+  builder: html
   configuration: docs/conf.py
 
-python:
-  install:
-    - requirements: docs/requirements.yaml
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs
-    - method: pip
-      path: another/package
-
+# python:
+#   install:
+#     - requirements: docs/requirements.yaml
+#     - method: pip
+#       path: .
+#       extra_requirements:
+#         - docs
+#     - method: pip
 
 conda:
   environment: docs/requirements.yaml
