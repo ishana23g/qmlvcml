@@ -81,7 +81,7 @@ def train_test_split_custom(df, y_col, test_size: float = 0.2, random_state: int
         The testing target.
     """
     if not 0.0 < test_size < 1.0:
-        raise ValueError(f"test_size has to be between 0.0 and 1.0, non-inclusive")
+        raise ValueError("test_size has to be between 0.0 and 1.0, non-inclusive")
     if isinstance(y_col, str):
         try:
             X = df.drop(columns=[y_col])    
