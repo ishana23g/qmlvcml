@@ -21,9 +21,9 @@ def test_state_preparation():
     ang_amplituides = np.real(apply_state_prep(ang))
     assert np.allclose(ang_amplituides, [0.53896774, 0.79503606, 0.27826503, 0.0]), "Did not get the correct amplitudes"
 
-@patch("matplotlib.pyplot.show")
-def test_with_banana():
+def test_with_banana(monkeypatch):
     banana_df_X, banana_df_y = read_banana_data()
+    monkeypatch.setattr(plt, 'show', lambda: None)
     apply_model(banana_df_X, banana_df_y, steps=1,
                      batch_size_percent=.8, isPlot=True, isDebug=True,
                      dim_reduce_type='trimap')
