@@ -92,6 +92,7 @@ def train_test_split_custom(df, y_col, test_size: float = 0.2, random_state: int
         X = df
         y = y_col
 
+    X = np.array(X)
     X = scale_data(X)
     y, _ = binary_classifier(y)
 

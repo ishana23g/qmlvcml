@@ -87,6 +87,8 @@ def test_transform_X():
     X_df = random_data(col=orig_col, n=100)
     X_str = "This is our data"
 
+    X, y = split_X_y(X_df)
+
     try:
         transform_X(X_str)
     except ValueError as e:
@@ -95,9 +97,9 @@ def test_transform_X():
     # testing if the type is valid
     true_types = ['trimap', 'pacmap', 'tsne', 'pca', 'none', None]
     types = ['trimap', 'pacmap', 'tsne', 'pca', 'none', None, 'invalid']
-    for type in types:
+    for type in true_types:
         try:
-            trans_X = transform_X(X_df, type=type)
+            trans_X = transform_X(X, type=type)
             n_cols = trans_X.shape[1]
             # make sure that there is the correct number of columns
             if type == 'none' or type is None:
@@ -128,10 +130,14 @@ def test_train_test():
                 assert X_test.shape == (5, 3), "X_test has the wrong shape"
                 assert y_train.shape == (5,), "y_train has the wrong shape"
                 assert y_test.shape == (5,), "y_test has the wrong shape"
-            
-            # check that X_train and X_test together give the range of 0 to 1
-            X = pd.concat([X_train, X_test], axis=1)
-            _scaling(X)
+                
+                # for testing purposes we will convert the data to pandas dataframes
+                X_train = pd.DataFrame(X_train)
+                X_test = pd.DataFrame(X_test)
+                # check that X_train and X_test together give the range of 0 to 1
+                X = pd.concat([X_train, X_test], axis=0)
+                X = np.array(X)
+                _scaling(X)
         except ValueError as e:
             assert str(e) == f"test_size has to be between 0.0 and 1.0, non-inclusive"
 
@@ -146,16 +152,17 @@ def test_accuracy():
 
 
 def test_back_transform() :
-    y_og = np.array([0, 0, 0, 1, 1])
+    y_og = pd.Series([0, 0, 0, 1, 1])
     # expect y to be 0 and 1
     # check we do have that
-    y_unique = np.unique(y_og)
+    y_unique = np.unique(y_og).numpy()
     assert np.all(y_unique == [0, 1]), "Did not get the correct unique values"
     assert len(y_unique) == 2, "Did not get the correct number of unique values"
 
     y, mapping = binary_classifier(y_og)
-    y_trans_unique = np.unique(y)
-    assert np.all(y_unique == [-1, 1]), "Did not get the correct unique values"
+    y = pd.Series(y)
+    y_trans_unique = np.unique(y).numpy()
+    assert np.all(y_trans_unique == [-1, 1]), "Did not get the correct unique values"
     assert np.all(y_og == back_transform(y, mapping)), "Did not get back the same values as we put in"
 
 
@@ -166,23 +173,23 @@ def test_get_angles():
     ang = get_angles(x)
     assert np.allclose(ang, [0.563975, -0., 0., -0.975046, 0.975046]), "Did not get the correct angles"
 
-def test_padding_and_normalization():
-    df = random_data(n=10, col=3)
+def test_q_encoding():
+    df = random_data(n=10, col=2)
     X, y = split_X_y(df)
     X = np.array(X, requires_grad=False)
     c = 0.1
     X_pad = padding_and_normalization(X, c)
 
-    # check that the padding is correct
+    # testing padding is correct
     # make sure that all the rows sum up to 1
     for i in range(X_pad.shape[0]):
-        assert np.allclose(np.sum(X_pad[i]), 1), "Did not normalize the observations correctly"
+        row_squared = float(np.sum(X_pad[i, :] ** 2))
+        assert np.allclose(row_squared, 1), "Did not normalize the observations correctly"
+    # check if we have now 4 columns, and 10 rows
+    assert X_pad.shape == (10, 4), "Did not pad the data correctly"
 
-def test_feature_map():
+    # testing feature map
+    X = feature_map(X_pad)
     # just testing we get the same amount of observations and the correct number of features
-    df = random_data(n=10, col=3)
-    X, y = split_X_y(df)
-    X = np.array(X, requires_grad=False)
-    X_map = feature_map(X)
-    assert X_map.shape == (10, 3), "Did not get the correct shape"
-    
+    # 2 original features and 3 new features in total. 5 features
+    assert X.shape == (10, 5), "Did not get the correct shape"

@@ -162,6 +162,11 @@ def apply_svm(df: pd.DataFrame, y_col: str,
     X_train, X_test, y_train, y_test = train_test_split_custom(
         df, y_col=y_col, test_size=test_size, random_state=random_state
     )
+    # convert to pandas dataframes
+    X_train = pd.DataFrame(X_train)
+    X_test = pd.DataFrame(X_test)
+    y_train = pd.Series(y_train)
+    y_test = pd.Series(y_test)
     model = train_svm(X_train, y_train)
     confusion = evaluate_model(model, X_test, y_test, isPlot=isPlot)
     print(f"Accuracy: {accuracy(confusion)}")
