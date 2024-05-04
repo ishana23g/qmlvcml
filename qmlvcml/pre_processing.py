@@ -1,3 +1,4 @@
+from matplotlib import scale
 import pandas as pd
 # import numpy as np
 from pennylane import numpy as np
@@ -48,8 +49,7 @@ def transform_X(X: pd.DataFrame, type=None) -> np.array:
     
     X = np.array(X, requires_grad=False)
     # for each do a min-max scaling for each column
-    for i in range(X.shape[1]):
-        X[:, i] = (X[:, i] - np.min(X[:, i])) / (np.max(X[:, i]) - np.min(X[:, i]))
+    X = scale_data(X)
     return X
 
 
@@ -81,17 +81,18 @@ def train_test_split_custom(df, y_col, test_size: float = 0.2, random_state: int
         The testing target.
     """
     if not 0.0 < test_size < 1.0:
-        raise ValueError(f"test_size has to be between 0.0 and 1.0, given test_size={test_size}")
+        raise ValueError(f"test_size has to be between 0.0 and 1.0, non-inclusive")
     if isinstance(y_col, str):
         try:
-            X = df.drop(columns=[y_col])
-            X = scale_data(X)
+            X = df.drop(columns=[y_col])    
             y = df[y_col]
         except KeyError:
             raise KeyError(f"Column {y_col} not found in the dataframe")
     else:
         X = df
         y = y_col
+
+    X = scale_data(X)
     y, _ = binary_classifier(y)
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -182,7 +183,7 @@ def binary_classifier (Y: np.array) -> tuple:
         Y = np.array([mapping[y] for y in Y], requires_grad=False)
     return Y, mapping
 
-def back_trainsform (Y: np.array, mapping: dict) -> np.array:
+def back_transform (Y: np.array, mapping: dict) -> np.array:
     """
     This function takes in the target variable and returns the original classes.
 
@@ -215,30 +216,26 @@ def back_trainsform (Y: np.array, mapping: dict) -> np.array:
 # CML Specific Pre-Processing Functions
 
 
-def scale_data(df: pd.DataFrame):
+def scale_data(X: np.array) -> np.array:
     """
     Scale the data.
-    We are only working with numeric data, so we will use StandardScaler.
+    We are only working with numeric data, so we will use min-max scaler.
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    X : np.array
         The input data.
 
     Returns
     -------
-    scaled_data : pandas.DataFrame
-        The scaled data.
+    X : pandas.DataFrame
+        The input data that has been scaled.
     """
-    scaler = StandardScaler()
-    try:
-        scaled_data = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
-    except ValueError as e:
-        print(f"Error: {e}")
-        print("Make sure that the data contains only numeric columns.")
-        scaled_data = df
-    return scaled_data
-
+    for i in range(X.shape[1]):
+        col_min = min(X[:, i])
+        col_max = max(X[:, i])
+        X[:, i] = (X[:, i] - col_min) / (col_max - col_min)
+    return X
 
 # QML Specific Pre-Processing Functions
 
@@ -261,6 +258,7 @@ def get_angles(x: np.array) -> np.array:
     beta2 = 2 * np.arcsin(np.linalg.norm(x[2:]) / np.linalg.norm(x))
 
     return np.array([beta2, -beta1 / 2, beta1 / 2, -beta0 / 2, beta0 / 2])
+
 
 def padding_and_normalization(X: np.array, c=0.1):
     """
