@@ -1,8 +1,10 @@
 import numpy as np
+# from pennylane import numpy as np
 import pandas as pd
 
 from qmlvcml.pre_processing import *
 from qmlvcml.vqml import state_preparation
+from .test_helper_funcs import *
 
 import pytest
 
@@ -31,7 +33,7 @@ def test_transform_X():
         else:
             assert n_cols == 2, "Did not apply dim. We wanted to get back only 2 columns (2D data)"
         # check the min and max of trans_X is between 0 and 1 for all columns
-        _scaling(trans_X)
+        scaling(trans_X)
 
     invalid_types = ['invalid', 'trimap1', 'pca1', 'tsne1', 'pacmap1']
     for type in invalid_types:
@@ -60,7 +62,7 @@ def test_train_test():
     # check that X_train and X_test together give the range of 0 to 1
     X = pd.concat([X_train, X_test], axis=0)
     X = np.array(X)
-    _scaling(X)
+    scaling(X)
 
     # check invalid test sizes
     invalid_test_sizes = [-0.1, 0, 1, 1.1]
@@ -83,17 +85,17 @@ def test_accuracy():
     assert abs(accuracy(conf_50)  - .5) < 1e-6, "Did not compute the accuracy correctly"
 
 
-def test_back_transform() :
+def test_y_transformations() :
     y_og = pd.Series([0, 0, 0, 1, 1])
     # expect y to be 0 and 1
     # check we do have that
-    y_unique = np.unique(y_og).numpy()
+    y_unique = np.unique(y_og)# .numpy()
     assert np.all(y_unique == [0, 1]), "Did not get the correct unique values"
     assert len(y_unique) == 2, "Did not get the correct number of unique values"
 
     y, mapping = binary_classifier(y_og)
     y = pd.Series(y)
-    y_trans_unique = np.unique(y).numpy()
+    y_trans_unique = np.unique(y)# .numpy()
     assert np.all(y_trans_unique == [-1, 1]), "Did not get the correct unique values"
     assert np.all(y_og == back_transform(y, mapping)), "Did not get back the same values as we put in"
 
@@ -101,18 +103,20 @@ def test_back_transform() :
     y_og = pd.Series([0, 0, 1, 1, 2, 2])
     with pytest.raises(ValueError, match="Y must be a binary class"):
         binary_classifier(y_og)
+    with pytest.raises(ValueError, match="Y must be a binary class"):
+        back_transform(y_og, mapping)
 
 # CML Specific Pre-Processing Functions
 
 def test_get_angles():
-    x = np.array([0.53896774, 0.79503606, 0.27826503, 0.0], requires_grad=False)
+    x = np.array([0.53896774, 0.79503606, 0.27826503, 0.0])# , requires_grad=False)
     ang = get_angles(x)
     assert np.allclose(ang, [0.563975, -0., 0., -0.975046, 0.975046]), "Did not get the correct angles"
 
 def test_q_encoding():
     df = random_data(n=10, col=2)
     X, y = split_X_y(df)
-    X = np.array(X, requires_grad=False)
+    X = np.array(X)# , requires_grad=False)
     c = 0.1
     X_pad = padding_and_normalization(X, c)
 
@@ -134,34 +138,3 @@ def test_q_encoding():
 
 
 
-
-
-# crete some random data for classification
-def random_data(n=10, col=2):
-    np.random.seed(0)
-    data = np.random.rand(n, col)
-    # create a binary target variable
-    target = np.random.randint(0, 2, n)
-    
-    # create a dataframe
-    df = pd.DataFrame(data, columns=[f'col_{i}' for i in range(col)])
-    df['target'] = target
-
-    return df
-
-def split_X_y(df: pd.DataFrame):
-    X = df.drop('target', axis=1)
-    y = df['target']
-
-    return X, y
-
-def _scaling(X: np.array):
-    for i in range(X.shape[1]):
-        # print(f"Column {i}")
-        # print(X[:, i])
-        # print(f"Min: {min(X[:, i])}")
-        # print(f"Max: {max(X[:, i])}")
-        assert abs(min(X[:, i]) - 0) < 1e-6, "Did not scale the column correctly to get min = 0"
-        assert abs(max(X[:, i]) - 1) < 1e-6, "Did not scale the column correctly to get max = 1"
-
-#### ^^^^^^^ HELPER FUNCTIONS  ^^^^^^^  ####

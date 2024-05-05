@@ -42,12 +42,12 @@ def train_svm(
     model : sklearn.svm.SVC
         The trained SVM model.
     """
-    try:
+    if isinstance(y_train, (pd.Series, pd.DataFrame)):
         y_train = pd.DataFrame(y_train)
         if len(np.unique(y_train)) != 2:
-            raise ValueError("We need exactly two classes for binary classification.")
-    except Exception as e:
-        print(e)
+            raise ValueError("We need exactly two classes for binary classification")
+    else: 
+        raise ValueError("y_train must be a pandas Series or DataFrame")
     model = SVC(kernel=kernel, C=C, gamma=gamma)
     model.fit(X_train, y_train)
     return model
