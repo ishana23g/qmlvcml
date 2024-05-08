@@ -1,3 +1,7 @@
+"""
+This module contains the functions for the classical machine learning part of the project.
+"""
+
 import pandas as pd
 # import numpy as np
 from pennylane import numpy as np

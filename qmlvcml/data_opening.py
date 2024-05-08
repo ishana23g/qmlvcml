@@ -1,3 +1,7 @@
+"""
+This module contains functions to read the data from the data files.
+"""
+
 import pandas as pd
 import os
 

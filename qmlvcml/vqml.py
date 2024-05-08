@@ -1,4 +1,6 @@
-"""Provide the primary functions."""
+"""
+This module contains the quantum variational classifier and the quantum variational circuit machine learning model.
+"""
 
 import pennylane as qml
 from pennylane import numpy as np
@@ -17,20 +19,15 @@ import pandas as pd
 
 from .pre_processing import *
 
+from typing import Tuple
+
 # NOTE the numpy array used in this quantum process is from pennylane, not default from numpy. 
 
-def state_preparation(a: np.array):
-    """
-    This function prepares the quantum state according to the angles provided.
+def state_preparation(a: np.array) -> None:
+    """This function prepares the quantum state according to the angles provided. It will be adding the gates to the qubit wires. 
 
-    Parameters:
-    -----------
-    a: np.array
-        The angles for the state preparation circuit
-
-    Returns:
-    --------
-    None
+    Args:
+        - a (np.array): The angles for the state preparation circuit in a pennylane numpy array.
     """
     qml.RY(a[0], wires=0)
 
@@ -47,19 +44,13 @@ def state_preparation(a: np.array):
     qml.PauliX(wires=0)
 
 
-def layer(layer_weights: np.array):
-    """
-    This function applies a layer of operations to all qubits in the circuit.
-
-    Parameters:
-    -----------
-    layer_weights: np.array
-        The weights for the layer
-        
-    Returns:
-    --------
-    None
-    """
+def layer(layer_weights: np.array) -> None:
+    """This function applies a layer of operations to all qubits in the circuit. In this case, it applies a rotation gate to each qubit and a CNOT gate between the qubits.
+    NOTE: This currently only works for 2 qubits. To generalise, we need to add a loop for the number of qubits. More information can be found here: https://arxiv.org/pdf/quant-ph/0407010
+    
+    Args:
+        - layer_weights (np.array): The weights for the layer
+    """    
     for wire in range(2):
         qml.Rot(*layer_weights[wire], wires=wire)
     qml.CNOT(wires=[0, 1])
@@ -68,16 +59,15 @@ def layer(layer_weights: np.array):
 dev = qml.device("default.qubit")
 @qml.qnode(dev)
 def circuit(weights: np.array, x: np.array = np.array([0, 0, 0, 0])) -> qml.expval:
-    """
-    Applies a quantum circuit to the given input.
+    """Applies a quantum circuit to the given input.
 
     Args:
-        weights (list): A list of weight tensors for each layer of the circuit.
-        x (array): The input data which are pre-processed to get the angles for the state preparation circuit.
+        - weights (np.array): The weights for the circuit
+        - x (np.array, optional): The input data which are pre-processed to get the angles for the state preparation circuit. Defaults to np.array([0, 0, 0, 0]).
 
     Returns:
-        float: The expectation value of the Pauli-Z operator on the first qubit.
-    """
+        - qml.expval: The expectation value of the Pauli-Z operator on the first qubit.
+    """    
     state_preparation(x)
     for layer_weights in weights:
         layer(layer_weights)
@@ -87,70 +77,48 @@ def circuit(weights: np.array, x: np.array = np.array([0, 0, 0, 0])) -> qml.expv
 
 
 def variational_classifier(weights: np.array, bias: np.array, x: np.array, isPlot=False) -> float:
-    """
-    This function applies the quantum circuit to the given input data.
+    """This function applies the quantum circuit to the given input data.
 
-    Parameters:
-    -----------
-    weights: np.array
-        The weights for the circuit
-    bias: np.array
-        The bias for the circuit
-    x: np.array
-        The input data
-    isPlot: bool
-        Whether to plot the circuit or not
+    Args:
+        - weights (np.array): The weights for the circuit (The quantum part of the model)
+        - bias (np.array): The bias for the circuit (The classical part of the model)
+        - x (np.array): The observational data to apply the circuit to; this will be the angles we got from the the state preparation circuit.
+        - isPlot (bool, optional): Whether to plot the circuit or not. Defaults to False. (NOTE: Might not be working as expected, need to check this.)
 
     Returns:
-    --------
-    float
-        The output of the circuit
-    """
+        - float: The output of the circuit
+    """    
     if isPlot:
         qml.draw(circuit)(weights, x)
     return circuit(weights, x) + bias
 
 
 def square_loss(labels: np.array, predictions: np.array) -> float:
-    """
-    This function calculates the square loss between the labels and the predictions.    
+    """This function calculates the square loss between the labels and the predictions.    
 
-    Parameters:
-    -----------
-    labels: np.array
-        The true labels
-    predictions: np.array   
-        The predicted labels
+    Args:
+        - labels (np.array): The true labels
+        - predictions (np.array): The predicted labels
 
     Returns:
-    --------
-    float
-        The square loss between the labels and the predictions
+        - float: The square loss between the labels and the predictions
     """
     # We use a call to qml.math.stack to allow subtracting the arrays directly
     return np.mean((labels - qml.math.stack(predictions)) ** 2)
 
 
 def cost(weights: np.array, bias: np.array, X: np.array, Y: np.array) -> float:
-    """
-    This function calculates the cost function for the quantum circuit.
+    """This function calculates the cost function for the quantum circuit.
 
-    Parameters:
-    -----------
-    weights: np.array
-        The weights for the circuit
-    bias: np.array
-        The bias for the circuit
-    X: np.array
-        The input data
-    Y: np.array
-        The true labels
+    Args:
+        weights (np.array): The weights for the circuit (The quantum part of the model)
+        bias (np.array): The bias for the circuit (The classical part of the model)
+        X (np.array): The observational data to apply the circuit to. This will be the angles we got from the the state preparation circuit.
+        Y (np.array): The true labels
 
     Returns:
-    --------    
-    float
-        The cost function for the quantum circuit
-    """
+        float: The cost function for the quantum circuit
+    """    
     # Transpose the batch of input data in order to make the indexing
     # in state_preparation work
     predictions = variational_classifier(weights, bias, X.T)
@@ -159,8 +127,8 @@ def cost(weights: np.array, bias: np.array, X: np.array, Y: np.array) -> float:
 
 
 def apply_model(
-    X: np.array,
-    Y: np.array,
+    X: Union[np.array, pd.DataFrame],
+    Y: Union[np.array, pd.DataFrame],
     weights_init: np.array =None,
     bias_init: np.array =None,
     steps: int =100,
@@ -168,41 +136,37 @@ def apply_model(
     split_per: float = 0.4,
     isPlot: bool =False,
     isDebug: bool =False,
-    dim_reduce_type: str =None,
+    dim_reduce_type: Union[str, None] =None,
     smoothness: int = 100,
     seed: int =42
-):
-    """
-    This function applies the quantum circuit to the given input data.
+) -> Tuple[np.array, np.array, np.array, np.array]:
+    """This function applies the quantum model to the given data. The model is trained using the given data and tries to optimize the weights and bias to get the best possible model.
 
-    Parameters:
-    -----------
-    X: np.array
-        The input data
-    y_col: str
-        The column name of the target variable
-    weights_init: np.array
-        The initial weights for the circuit
-    bias_init: np.array
-        The initial bias for the circuit
-    steps: int
-        The number of steps to train the model
-    batch_size_percent: float
-        The percentage of the training data to use in each batch for the QML model steps
-    split_per: float
-        The percentage of the data to use for the training set (the training-testing split percentage)
-    isPlot: bool
-        Whether to plot the circuit or not
-    isDebug: bool
-        Whether to print out debug information or not
-    dim_reduce_type: str
-        The type of dimension reduction to apply to the data. 
-        The options are: 'trimap', 'pacmap', 'tsne', 'pca', 'none', None
-    smoothness: int
-        The smoothness of the final grid plot
-    seed: int
-        The seed for the random number generator
-    """
+    Args:
+        X (np.array | pd.Dataframe): The observational data without the target variable.
+        Y (np.array | pd.Dataframe): The target variable (for classification).
+        weights_init (np.array, optional): The initial weights for the circuit. Defaults to None, it will be randomly generated.
+        bias_init (np.array, optional): The initial bias for the circuit. Defaults to None, it will be randomly generated.
+        steps (int, optional): The number of steps to train the model. Defaults to 100.
+        batch_size_percent (float, optional): The percentage of the training data to use in each batch for the QML model steps. Defaults to 0.5.
+        split_per (float, optional): The percentage of the data to use for the training set (the training-testing split percentage). Defaults to 0.4.
+        isPlot (bool, optional): Whether to plot the dimensionality reduction data, the normalized+padded data, the feature vectors, the circuit, the confusion matrix, and the decision boundary of the final model with the predicted labels. Defaults to False.
+        isDebug (bool, optional): Whether to print out debug information or not. Defaults to False. Can be useful not for debugging but for understanding the process too. 
+        dim_reduce_type (str | None, optional) : The type of dimension reduction to apply to the data. The options are: 'trimap', 'pacmap', 'tsne', 'pca', 'none', None. Defaults to None.
+        smoothness (int, optional): The smoothness of the final grid plot which will be used in the decision boundary plot. Defaults to 100.
+        seed (int, optional): The seed for the random number generator. Defaults to 42.
+
+    Raises:
+        ValueError: If the batch_size_percent or split_per are not between 0 and 1.
+        ValueError: If the dim_reduce_type is not one of the supported types.
+
+    Returns:
+        Tuple[np.array, np.array, np.array, np.array]:
+            - np.array: The final weights for the circuit
+            - np.array: The final bias for the circuit
+            - np.array: The costs for each step of the training
+            - np.array: The accuracies for each step of the training        
+    """    
 
     # make sure that batch_size_percent and split_per are between 0 and 1
     if not 0 < batch_size_percent < 1:

@@ -1,3 +1,7 @@
+"""
+This module contains the pre-processing functions that are used in the QML and CML pipelines. There are functions that are specific to QML and CML, and some that are general and can be used in both pipelines.
+"""
+
 from matplotlib import scale
 import pandas as pd
 # import numpy as np
@@ -62,6 +66,7 @@ def train_test_split_custom(df:pd.DataFrame,
     The X data (observations) are all min-maxed scaled and the target variable is converted to a binary class.
     The min-max scaling is done column wise to ensure that the one feature does not dominate the other.
     NOTE: The data will be stored using pennylane's numpy that uses tensors. 
+
     Args:
         - df (pd.DataFrame): The input data.
         - y_col (str | pd.DataFrame | pd.Series): The column name of the target variable.
@@ -203,7 +208,7 @@ def scale_data(X: np.array) -> np.array:
     """This function scales the data using min-max scaling.
 
     Args:
-        - X (np.array): The observational data that is only has numerical values. Note that the data is a pennylane numpy array. NOTE: I do not check if the data is numerical or not. We are assuming the user has already checked this.
+        - X (np.array): The observational data that is only has numerical values. NOTE: that the data is a pennylane numpy array. Also I do not check if the data is numerical or not. We are assuming the user has already checked this.
 
     Returns:
         - np.array: The [0, 1] scaled data.
