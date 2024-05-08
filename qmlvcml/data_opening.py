@@ -2,26 +2,20 @@ import pandas as pd
 import os
 
 
-def read_data(file_path: str, y_col_name: str) -> tuple:
-    """
-    Read the data and return the features and target variables.
+def read_data(file_path: str, y_col_name: str) -> tuple[pd.DataFrame, pd.Series]:
+    """Read the data and return the features and target variables.
 
-    Parameters
-    ----------
-    file_path : str
-        The path to the data file.
-    y_col_name : str
-        The name of the column that contains the target variable.
+    Args:
+        file_path (str): The path to the data file.
+        y_col_name (str): The name of the column that contains the target variable.
 
-    Raises
-    ------
-    ValueError
-        If the target column is not found in the dataframe.
+    Raises:
+        ValueError: If the target column is not found in the dataframe.
 
-    Returns 
-    -------
-    tuple: pandas.DataFrame, pandas.Series
-        The features and target variables.
+    Returns:
+        tuple[pd.DataFrame, pd.Series]:
+            - X (pandas.DataFrame): The features columns.
+            - Y (pandas.Series): The target column.
     """
     df = pd.read_csv(file_path)
     if y_col_name not in df.columns:
@@ -30,18 +24,17 @@ def read_data(file_path: str, y_col_name: str) -> tuple:
     X = df.drop(columns=[y_col_name])
     return X, y
 
-def read_banana_data() -> tuple:
-    """
-    Read the banana quality data that is saved in this repository.
-    
-    Returns
-    -------
-    tuple: X: pandas.DataFrame, y: pandas.Series
-        The features: 7 columns of different banana properties, can also be thought of the observations -> X.
-        The target: The quality of the banana that are binary classes-> y.
+
+def read_banana_data() -> tuple[pd.DataFrame, pd.Series]:
+    """Read the banana quality data that is saved in this repository.
+
+    Returns:
+        tuple[pd.DataFrame, pd.Series]:
+            - X (pandas.DataFrame): The 7 features columns of different banana properties, can also be thought of the observations.
+            - y (pandas.Series): The target column that contains the quality of the banana.
     """
     # get the current directory path
     current_dir = os.path.dirname(__file__)
     # get the file path
-    file_path = os.path.join(current_dir, 'data', 'banana_quality.csv')
-    return read_data(file_path, 'Quality')
+    file_path = os.path.join(current_dir, "data", "banana_quality.csv")
+    return read_data(file_path, "Quality")
