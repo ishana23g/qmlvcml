@@ -73,7 +73,7 @@ def evaluate_model(model: SVC,
         plt.title("Confusion Matrix")
         plt.show()
 
-        visualize_data(X_test, y_test, model)
+        visualize_data(X_test, y_test)
     return confusion
 
 
