@@ -51,8 +51,8 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
-    'sphinxcontrib.osexample',
-    'sphinx.ext.autosectionlabel'
+    # 'sphinxcontrib.osexample',
+    # 'sphinx.ext.autosectionlabel'
     # 'sphinx.ext.duration',
     # 'sphinx.ext.doctest',
 ]

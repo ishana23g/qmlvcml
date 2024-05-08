@@ -61,7 +61,7 @@ def train_test_split_custom(df:pd.DataFrame,
     """Split the data into training and testing sets.
     The X data (observations) are all min-maxed scaled and the target variable is converted to a binary class.
     The min-max scaling is done column wise to ensure that the one feature does not dominate the other.
-
+    NOTE: The data will be stored using pennylane's numpy that uses tensors. 
     Args:
         - df (pd.DataFrame): The input data.
         - y_col (str | pd.DataFrame | pd.Series): The column name of the target variable.
@@ -73,8 +73,7 @@ def train_test_split_custom(df:pd.DataFrame,
         - KeyError: If the target column is not found in the dataframe.
 
     Returns:
-        Tuple[np.array, np.array, np.array, np.array]: The training and testing data and target variables which are split with the respective sizes.
-        Do note that the data will be converted to pennylane numpy that use tensors. 
+        Tuple[np.array, np.array, np.array, np.array]: 
                 - train_X (np.array): The training data.
                 - test_X (np.array): The testing data.
                 - train_y (np.array): The training target.
@@ -163,7 +162,7 @@ def binary_classifier (Y: np.array) -> Tuple[np.array, dict]:
         - ValueError: If we are not given a binary class. This is checked by ensuring that the target variable has two unique values found in the given array.
 
     Returns:
-        Tuple[np.array, dict]: The binary class and the mapping of the original classes.
+        Tuple[np.array, dict]:
             - Y (np.array): The converted array that contains now -1, 1 values.
             - mapping (dict): The mapping of the original classes. It will have structure like {original_class_0: -1, original_class_1: 1}
     """
@@ -204,8 +203,7 @@ def scale_data(X: np.array) -> np.array:
     """This function scales the data using min-max scaling.
 
     Args:
-        - X (np.array): The observational data that is only has numerical values.
-        Note that the data is a pennylane numpy array. Also we do not check if the data is numerical or not. We are assuming the user has already checked this.
+        - X (np.array): The observational data that is only has numerical values. Note that the data is a pennylane numpy array. NOTE: I do not check if the data is numerical or not. We are assuming the user has already checked this.
 
     Returns:
         - np.array: The [0, 1] scaled data.
@@ -222,10 +220,10 @@ def get_angles(x: np.array) -> np.array:
     """This function takes in a numpy array and returns the angles for the state preparation circuit.
 
     Args:
-        x (np.array): The input observational data. We are assuming that the data is already row wise normalized and padded.
+        - x (np.array): The input observational data. We are assuming that the data is already row wise normalized and padded.
 
     Returns:
-        np.array: The angles for which will be used in the state preparation circuit.
+        - np.array: The angles for which will be used in the state preparation circuit.
     """    
     beta0 = 2 * np.arcsin(np.sqrt(x[1] ** 2) / np.sqrt(x[0] ** 2 + x[1] ** 2 + 1e-12))
     beta1 = 2 * np.arcsin(np.sqrt(x[3] ** 2) / np.sqrt(x[2] ** 2 + x[3] ** 2 + 1e-12))
@@ -242,8 +240,7 @@ def padding_and_normalization(X: np.array, c=0.1) -> np.array:
     Then we normalize the data by dividing by the norm of each row entry vectors.
 
     Args:
-        - X (np.array): The raw observational data that is not normalized. Before using this function, we might have the data use dimensionality reduction techniques.
-        This is not optimized/generalized for any multi/high dimensional data. It works for 2D data currently. 
+        - X (np.array): The raw observational data that is not normalized. Before using this function, we might have the data use dimensionality reduction techniques. NOTE: This is not optimized/generalized for any multi/high dimensional data. It works for 2D data currently. 
         - c (float, optional): The constant value to pad the data with. Defaults to 0.1 as this is a small non-zero value.
 
     Returns:
@@ -258,10 +255,10 @@ def feature_map(X: np.array) -> np.array:
     """This function takes in the input data and returns the new features.
 
     Args:
-        X (np.array): The padded and normalized data.
+        - X (np.array): The padded and normalized data.
 
     Returns:
-        np.array: The new features.
+        - np.array: The new features.
     """    
     return np.array([get_angles(x) for x in X])
 
