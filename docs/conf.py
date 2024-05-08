@@ -51,9 +51,13 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.extlinks',
+    'sphinxcontrib.osexample',
+    'sphinx.ext.autosectionlabel'
     # 'sphinx.ext.duration',
     # 'sphinx.ext.doctest',
 ]
+
+# pygments_style = 'sphinx'
 
 autosummary_generate = True
 napoleon_google_docstring = False

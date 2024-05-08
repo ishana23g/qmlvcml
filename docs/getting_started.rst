@@ -5,6 +5,7 @@ This page details how to get started with QMLvCML.
 
 To install this package, you first need to clone this repository.
 And once you are inside the repository, you can install the package using the following command:
+
 .. code-block:: bash
         pip install -e .
 
