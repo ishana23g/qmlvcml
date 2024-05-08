@@ -6,15 +6,12 @@ def read_data(file_path: str, y_col_name: str) -> tuple:
     """
     Read the data and return the features and target variables.
 
-    Parameters
-    ----------
-    file_path : str
-        The path to the data file.
-
-    Returns
-    -------
-    tuple
-        The features and target variables.
+    :param file_path: the path to the data file.
+    :type file_path: str
+    :param y_col_name: the name of the target column.
+    :type y_col_name: str
+    :return: the features and target variables.
+    :rtype: tuple of pandas.DataFrame
     """    
     df = pd.read_csv(file_path)
     if y_col_name not in df.columns:
@@ -32,6 +29,9 @@ def read_banana_data() -> tuple:
     tuple: X, y
         The features: 7 columns of different banana properties/observations.
         The target: The quality of the banana.
+
+    :return: The features of 7 different banana properties of the banana -> X; The quality of the banana -> y
+    :rtype: tuple of pandas.DataFrame
     """
     # get the current directory path
     current_dir = os.path.dirname(__file__)
