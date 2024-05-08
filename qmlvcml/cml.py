@@ -134,36 +134,10 @@ def apply_svm(df: pd.DataFrame, y_col: str,
 
     Returns:
         tuple[SVC, pd.DataFrame, float]: 
-        - SVC: The trained SVM model.
-        - pd.DataFrame: The confusion matrix.
-        - float: The accuracy of the model.
+            - SVC: The trained SVM model.
+            - pd.DataFrame: The confusion matrix.
+            - float: The accuracy of the model.
     """    
-
-
-    """
-    
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        The input data.
-    y_col : str
-        The column name of the target variable.
-    test_size : float, optional
-        The size of the testing set. Default is 0.2.
-        Has to be between 0.0 and 1.0.
-    random_state : int, optional
-        The random state for splitting the data. Default is 42.
-    isPlot : bool, optional
-        Whether to plot the confusion matrix. Default is False.
-
-    Returns
-    -------
-    model : sklearn.svm.SVC
-        The trained SVM model.
-    confusion : pandas.DataFrame
-        The confusion matrix.
-    """
     X_train, X_test, y_train, y_test = train_test_split_custom(
         df, y_col=y_col, test_size=test_size, random_state=random_state
     )

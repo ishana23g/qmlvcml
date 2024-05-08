@@ -75,11 +75,11 @@ def train_test_split_custom(df:pd.DataFrame,
     Returns:
         Tuple[np.array, np.array, np.array, np.array]: The training and testing data and target variables which are split with the respective sizes.
         Do note that the data will be converted to pennylane numpy that use tensors. 
-        - train_X (np.array): The training data.
-        - test_X (np.array): The testing data.
-        - train_y (np.array): The training target.
-        - test_y (np.array): The testing target.
-    """
+                - train_X (np.array): The training data.
+                - test_X (np.array): The testing data.
+                - train_y (np.array): The training target.
+                - test_y (np.array): The testing target.
+        """
     if not 0.0 < test_size < 1.0:
         raise ValueError("test_size has to be between 0.0 and 1.0, non-inclusive")
     if isinstance(y_col, str):
@@ -164,8 +164,8 @@ def binary_classifier (Y: np.array) -> Tuple[np.array, dict]:
 
     Returns:
         Tuple[np.array, dict]: The binary class and the mapping of the original classes.
-        - Y (np.array): The converted array that contains now -1, 1 values.
-        - mapping (dict): The mapping of the original classes. It will have structure like {original_class_0: -1, original_class_1: 1}
+            - Y (np.array): The converted array that contains now -1, 1 values.
+            - mapping (dict): The mapping of the original classes. It will have structure like {original_class_0: -1, original_class_1: 1}
     """
     if len(np.unique(Y)) != 2:
         raise ValueError("Y must be a binary class")

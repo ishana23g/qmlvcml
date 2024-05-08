@@ -39,4 +39,4 @@ def test_visualize_data_fails(monkeypatch):
     X, y = split_X_y(df)
 
     with pytest.raises(ValueError, match="Unknown type: invalid"):
-        visualize_data(X, y, SVC(), type='invalid')
+        visualize_data(X, y, type='invalid')
