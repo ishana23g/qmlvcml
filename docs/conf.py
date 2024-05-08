@@ -62,8 +62,14 @@ napoleon_use_ivar = True
 
 autodoc_default_options = {
     'members': True,
+    'inherited-members': True,
+    'show-inheritance': True,
+    'member-order': 'bysource',
+    'special-members': '__init__',
+    'undoc-members': True,
+    'exclude-members': '__weakref__',
 }
-autodoc_typehints = "description"
+# autodoc_typehints = "description"
 
 
 # Add any paths that contain templates here, relative to this directory.
