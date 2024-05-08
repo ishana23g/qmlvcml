@@ -55,7 +55,7 @@ def transform_X(X: pd.DataFrame, type: Union[str, None] = None) -> np.array:
 
 
 def train_test_split_custom(df:pd.DataFrame, 
-                            y_col: str | pd.DataFrame | pd.Series,
+                            y_col: Union[str, pd.DataFrame, pd.Series],
                             test_size: float = 0.2, 
                             random_state: int = 42) -> Tuple[np.array, np.array, np.array, np.array]:
     """Split the data into training and testing sets.

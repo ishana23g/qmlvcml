@@ -20,28 +20,23 @@ def train_svm(
     kernel: str = "rbf",
     C: float = 1.0,
     gamma: float = "scale",
-):
-    """
-    Train the Support Vector Machine (SVM) model for binary classification.
+) -> SVC:
+    """Train the Support Vector Machine (SVM) model for binary classification.
 
-    Parameters
-    ----------
-    X_train : pandas.DataFrame
-        The training data.
-    y_train : pandas.Series
-        The training target. We need to make sure that we have only two classes.
-    kernel : str, optional
-        The kernel for the SVM model. Default is 'rbf' (Radial Basis Function).
-    C : float, optional
-        The regularization parameter. Default is 1.0.
-    gamma : float, optional
-        The kernel coefficient for 'rbf', 'poly' and 'sigmoid'. Default is 'scale'.
+    Args:
+        - X_train (pd.DataFrame): The training observations which are all numeric.
+        - y_train (pd.Series): The training target. We need to make sure that we have only two classes.
+        - kernel (str, optional): The kernel for the SVM model. Defaults to "rbf" which is the Radial Basis Function.
+        - C (float, optional): The regularization parameter. Defaults to 1.0.
+        - gamma (float, optional): The kernel coefficient for 'rbf', 'poly' and 'sigmoid'. Defaults to "scale" which is 1 / (n_features * X.var()).
 
-    Returns
-    -------
-    model : sklearn.svm.SVC
-        The trained SVM model.
-    """
+    Raises:
+        - ValueError: If the target variable has more than two classes.
+        - ValueError: If the target variable is not a pandas Series or DataFrame.
+
+    Returns:
+        - SVC: The trained SVM model.
+    """    
     if isinstance(y_train, (pd.Series, pd.DataFrame)):
         y_train = pd.DataFrame(y_train)
         if len(np.unique(y_train)) != 2:
@@ -56,24 +51,18 @@ def train_svm(
 def evaluate_model(model: SVC, 
                    X_test: pd.DataFrame, 
                    y_test: pd.Series,
-                   isPlot: bool = False):
-    """
-    Evaluate the SVM model.
+                   isPlot: bool = False) -> pd.DataFrame:
+    """Evaluate the SVM model.
 
-    Parameters
-    ----------
-    model : sklearn.svm.SVC
-        The trained SVM model.
-    X_test : pandas.DataFrame
-        The testing data.
-    y_test : pandas.Series
-        The testing target.
+    Args:
+        - model (SVC): The trained SVM model.
+        - X_test (pd.DataFrame): The observations for testing that are all numeric.
+        - y_test (pd.Series): The target variable for testing that are linked to the observations' indexes labels.
+        - isPlot (bool, optional): Whether to plot the confusion matrix and the observations in 2D space (with the color representing the target variable). Defaults to False.
 
-    Returns
-    -------
-    confusion : pandas.DataFrame
-        The confusion matrix.
-    """
+    Returns:
+        - pd.DataFrame: The confusion matrix.
+    """    
     y_pred = model.predict(X_test)
     confusion = pd.DataFrame(confusion_matrix(y_test, y_pred))
     if isPlot:
@@ -90,25 +79,22 @@ def evaluate_model(model: SVC,
 
 def visualize_data(X: pd.DataFrame, 
                    y: pd.Series, 
-                   model: SVC, 
                    type: str = "tsne",
-                   figure_size=(10, 10)):
-    """
-    Visualize the data using a dimensionality reduction technique
+                   figure_size=(10, 10)) -> None:
+    """Visualize the data using a dimensionality reduction technique
     Possible techniques: 'trimap', 'pacmap', 'tsne', 'pca'.
 
-    Parameters
-    ----------
-    X : pandas.DataFrame
-        The observational data without the target variable.
-    y : pandas.Series
-        Just the target variable (for coloring the data).
-    type : str, optional
-        The type of visualization. Default is 'tsne'.
-        Other options are 'trimap', 'pacmap', 'pca'.
-    figure_size : tuple, optional
-        The size of the figure. Default is (10, 10).
-    """
+    More stuff that could be done in the future is try and visualize the decision boundary of the SVM model and a gradient of the decision function.
+
+    Args:
+        - X (pd.DataFrame): The observational data without the target variable.
+        - y (pd.Series): Just the target variable (for coloring the data).
+        - type (str, optional): The type of visualization. Defaults to "tsne".
+        - figure_size (tuple, optional): The size of the figure. Defaults to (10, 10).
+
+    Raises:
+        - ValueError: If the type of visualization is not supported.
+    """    
     if type not in ["trimap", "pacmap", "tsne", "pca"]:
         raise ValueError(f"Unknown type: {type}")
     X = transform_X(X, type)
@@ -134,9 +120,28 @@ def visualize_data(X: pd.DataFrame,
 
 def apply_svm(df: pd.DataFrame, y_col: str, 
               test_size: float = 0.2, random_state: int = 42,
-              isPlot: bool = False):
+              isPlot: bool = False) -> tuple[SVC, pd.DataFrame, float]:
+    """Apply SVM to the data.
+
+    Possible future improvements are more hyperparameter tuning and k-fold or n-fold cross-validation. 
+
+    Args:
+        - df (pd.DataFrame): All of the data with both the features and target variable.
+        - y_col (str): The name of the target variable column in the dataframe.
+        - test_size (float, optional): The size of the testing set. Defaults to 0.2.
+        - random_state (int, optional): The random state for splitting the data. Defaults to 42.
+        - isPlot (bool, optional): Whether to plot the confusion matrix and the observations in 2D space (with the color representing the target variable). Defaults to False.
+
+    Returns:
+        tuple[SVC, pd.DataFrame, float]: 
+        - SVC: The trained SVM model.
+        - pd.DataFrame: The confusion matrix.
+        - float: The accuracy of the model.
+    """    
+
+
     """
-    Apply SVM to the data.
+    
 
     Parameters
     ----------
@@ -169,5 +174,6 @@ def apply_svm(df: pd.DataFrame, y_col: str,
     y_test = pd.Series(y_test)
     model = train_svm(X_train, y_train)
     confusion = evaluate_model(model, X_test, y_test, isPlot=isPlot)
-    print(f"Accuracy: {accuracy(confusion)}")
-    return model, confusion
+    acc = accuracy(confusion)
+    print(f"Accuracy: {acc}")
+    return model, confusion, acc
