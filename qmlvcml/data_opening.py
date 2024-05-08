@@ -1,10 +1,10 @@
 import pandas as pd
 import os
 
-from typing import Union, Optional, Tuple
+from typing import Tuple
 
 
-def read_data(file_path: str, y_col_name: str) -> tuple[pd.DataFrame, pd.Series]:
+def read_data(file_path: str, y_col_name: str) -> Tuple[pd.DataFrame, pd.Series]:
     """Read the data and return the features and target variables.
 
     Args:

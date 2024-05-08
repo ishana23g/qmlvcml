@@ -12,10 +12,12 @@ import trimap
 import pacmap
 
 
-from typing import Union, Optional, Tuple
+from typing import Tuple
 
-def transform_X(X: pd.DataFrame, type=None) -> np.array:
-    """This function takes in a pandas dataframe or a regular numpy array and returns a pennylane numpy array.
+# for transfrom_X the type is optional, and also takes in None or a string
+def transform_X(X: pd.DataFrame, type: str | None = None) -> np.array:
+    """
+    This function takes in a pandas dataframe or a regular numpy array and returns a pennylane numpy array.
     The function can also transform the data using a specified method to reduce the dimensions: 'trimap', 'pacmap', 'tsne', 'pca'.
 
     Args:
@@ -52,48 +54,31 @@ def transform_X(X: pd.DataFrame, type=None) -> np.array:
     return X
 
 
-def train_test_split_custom(df, y_col, test_size: float = 0.2, random_state: int = 42):
+def train_test_split_custom(df:pd.DataFrame, 
+                            y_col: str | pd.DataFrame | pd.Series,
+                            test_size: float = 0.2, 
+                            random_state: int = 42) -> Tuple[np.array, np.array, np.array, np.array]:
     """Split the data into training and testing sets.
+    The X data (observations) are all min-maxed scaled and the target variable is converted to a binary class.
+    The min-max scaling is done column wise to ensure that the one feature does not dominate the other.
 
     Args:
-        df (_type_): _description_
-        y_col (_type_): _description_
-        test_size (float, optional): _description_. Defaults to 0.2.
-        random_state (int, optional): _description_. Defaults to 42.
+        - df (pd.DataFrame): The input data.
+        - y_col (str | pd.DataFrame | pd.Series): The column name of the target variable.
+        - test_size (float, optional): The size of the testing set. Defaults to 0.2.
+        - random_state (int, optional): The random state (seed) for splitting the data. Defaults to 42. (there is no real reason for using 42; if it is not changed it will remain consistent)
 
     Raises:
-        ValueError: _description_
-        KeyError: _description_
+        - ValueError: The test_size has to be between 0.0 and 1.0, non-inclusive.
+        - KeyError: If the target column is not found in the dataframe.
 
     Returns:
-        _type_: _description_
-    """    
-
-    """
-    
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        The input data.
-    y_col : str, or pd.DataFrame/np.array
-        The column name of the target variable. Default is 'target'.
-    test_size : float, optional
-        The size of the testing set. Default is 0.2.
-        Has to be between 0.0 and 1.0.
-    random_state : int, optional
-        The random state for splitting the data. Default is 42.
-
-    Returns
-    -------
-    train_X : pandas.DataFrame
-        The training data.
-    test_X : pandas.DataFrame
-        The testing data.
-    train_y : pandas.Series
-        The training target.
-    test_y : pandas.Series
-        The testing target.
+        Tuple[np.array, np.array, np.array, np.array]: The training and testing data and target variables which are split with the respective sizes.
+        Do note that the data will be converted to pennylane numpy that use tensors. 
+        - train_X (np.array): The training data.
+        - test_X (np.array): The testing data.
+        - train_y (np.array): The training target.
+        - test_y (np.array): The testing target.
     """
     if not 0.0 < test_size < 1.0:
         raise ValueError("test_size has to be between 0.0 and 1.0, non-inclusive")
@@ -117,19 +102,16 @@ def train_test_split_custom(df, y_col, test_size: float = 0.2, random_state: int
     return X_train, X_test, y_train, y_test
 
 
-def accuracy(confusion: pd.DataFrame):
+def accuracy(confusion: pd.DataFrame) -> float:
     """
-    Calculate the accuracy of the model.
+    Calculate the accuracy of the model from a confusion matrix.
+    This function only works for binary classification/binary confusion matrices
 
-    Parameters
-    ----------
-    confusion : pandas.DataFrame
-        The confusion matrix.
+    Args:
+        - confusion (pd.DataFrame): The confusion matrix that is a 2x2 matrix.
 
-    Returns
-    -------
-    accuracy : float
-        The accuracy of the model.
+    Returns:
+        - float: The accuracy of the model that will be a value between 0 and 1 indicating the percentage of correct predictions.
     """
     return np.trace(confusion)/np.sum(np.sum(confusion))
 
@@ -171,25 +153,19 @@ def accuracy(confusion: pd.DataFrame):
 #     return df
     
 
-def binary_classifier (Y: np.array) -> tuple:
-    """
-    This function takes in the target variable and returns a binary class.
+def binary_classifier (Y: np.array) -> Tuple[np.array, dict]:
+    """This function takes in the target variable and returns a binary class.
 
-    Parameters:
-    -----------
-    Y: np.array
-        The target variable
-        
-    Returns:
-    --------
-    tuple: (np.array, dict)
-        The binary class and the mapping of the original classes
+    Args:
+        - Y (np.array): The target variable that is already a pennylane numpy array.
 
     Raises:
-    -------
-    ValueError
-        If the target variable does not have exactly two classes
+        - ValueError: If we are not given a binary class. This is checked by ensuring that the target variable has two unique values found in the given array.
 
+    Returns:
+        Tuple[np.array, dict]: The binary class and the mapping of the original classes.
+        - Y (np.array): The converted array that contains now -1, 1 values.
+        - mapping (dict): The mapping of the original classes. It will have structure like {original_class_0: -1, original_class_1: 1}
     """
     if len(np.unique(Y)) != 2:
         raise ValueError("Y must be a binary class")
@@ -200,26 +176,18 @@ def binary_classifier (Y: np.array) -> tuple:
     return Y, mapping
 
 def back_transform (Y: np.array, mapping: dict) -> np.array:
-    """
-    This function takes in the target variable and returns the original classes.
+    """This function takes in the target variable and returns the original classes.
+    Basically, it is the inverse of the binary_classifier function.
 
-    Parameters:
-    -----------
-    Y: np.array
-        The target variable
-    mapping: dict
-        The mapping of the original classes
-        
-    Returns:
-    --------
-    np.array
-        The original classes
+    Args:
+        - Y (np.array): The target variable that is already a pennylane numpy array.
+        - mapping (dict): The mapping of the original classes. This can either be constructed manually or can come from the binary_classifier function.
 
     Raises:
-    -------
-    ValueError
-        If the target variable does not have exactly two classes
+        - ValueError: If the target variable does not have exactly two classes.
 
+    Returns:
+        - np.array: The {-1, 1} classes are converted back to the original classes using the mapping.
     """
     if len(np.unique(Y)) != 2:
         raise ValueError("Y must be a binary class")
@@ -233,19 +201,14 @@ def back_transform (Y: np.array, mapping: dict) -> np.array:
 
 
 def scale_data(X: np.array) -> np.array:
-    """
-    Scale the data.
-    We are only working with numeric data, so we will use min-max scaler.
+    """This function scales the data using min-max scaling.
 
-    Parameters
-    ----------
-    X : np.array
-        The input data.
+    Args:
+        - X (np.array): The observational data that is only has numerical values.
+        Note that the data is a pennylane numpy array. Also we do not check if the data is numerical or not. We are assuming the user has already checked this.
 
-    Returns
-    -------
-    X : pandas.DataFrame
-        The input data that has been scaled.
+    Returns:
+        - np.array: The [0, 1] scaled data.
     """
     for i in range(X.shape[1]):
         col_min = min(X[:, i])
@@ -256,19 +219,14 @@ def scale_data(X: np.array) -> np.array:
 # QML Specific Pre-Processing Functions
 
 def get_angles(x: np.array) -> np.array:
-    """
-    This function takes in a numpy array and returns the angles for the state preparation circuit.
+    """This function takes in a numpy array and returns the angles for the state preparation circuit.
 
-    Parameters:
-    -----------
-    x: np.array
-        The input data
+    Args:
+        x (np.array): The input observational data. We are assuming that the data is already row wise normalized and padded.
 
     Returns:
-    --------
-    np.array
-        The angles for the state preparation circuit
-    """
+        np.array: The angles for which will be used in the state preparation circuit.
+    """    
     beta0 = 2 * np.arcsin(np.sqrt(x[1] ** 2) / np.sqrt(x[0] ** 2 + x[1] ** 2 + 1e-12))
     beta1 = 2 * np.arcsin(np.sqrt(x[3] ** 2) / np.sqrt(x[2] ** 2 + x[3] ** 2 + 1e-12))
     beta2 = 2 * np.arcsin(np.linalg.norm(x[2:]) / np.linalg.norm(x))
@@ -276,38 +234,34 @@ def get_angles(x: np.array) -> np.array:
     return np.array([beta2, -beta1 / 2, beta1 / 2, -beta0 / 2, beta0 / 2])
 
 
-def padding_and_normalization(X: np.array, c=0.1):
-    """
-    Pads out the input data with a constant value of c. The latent dimensions (padded values) ensure that the normalization does not erase any information on the length of the vectors, and keep the features distinguishable. Then we normalize the data by dividing by the norm of each row entry vectors.
+def padding_and_normalization(X: np.array, c=0.1) -> np.array:
+    """This function pads the data with a constant value and normalizes it.
+    Pads out the input data with a constant value of c. 
+    The latent dimensions (padded values) ensure that the normalization does not erase any information on the length of the vectors,
+    and keep the features distinguishable.
+    Then we normalize the data by dividing by the norm of each row entry vectors.
 
-    Parameters:
-    -----------
-    X: np.array
-        The input data
+    Args:
+        - X (np.array): The raw observational data that is not normalized. Before using this function, we might have the data use dimensionality reduction techniques.
+        This is not optimized/generalized for any multi/high dimensional data. It works for 2D data currently. 
+        - c (float, optional): The constant value to pad the data with. Defaults to 0.1 as this is a small non-zero value.
 
     Returns:
-    --------
-    np.array
-        The padded and normalized data
-    """
+        - np.array: The padded and normalized data.
+    """    
     padding = np.ones((len(X), 2)) * c
     X_pad = np.c_[X, padding]
     normalization = np.sqrt(np.sum(X_pad**2, -1))
     return (X_pad.T / normalization).T
 
 def feature_map(X: np.array) -> np.array:
-    """
-    This function takes in the input data and returns the new features.
+    """This function takes in the input data and returns the new features.
 
-    Parameters:
-    -----------
-    X: np.array
-        The input data
+    Args:
+        X (np.array): The padded and normalized data.
 
     Returns:
-    --------
-    np.array
-        The new features
-    """
+        np.array: The new features.
+    """    
     return np.array([get_angles(x) for x in X])
 
