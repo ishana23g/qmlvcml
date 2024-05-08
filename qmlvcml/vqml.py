@@ -111,13 +111,13 @@ def cost(weights: np.array, bias: np.array, X: np.array, Y: np.array) -> float:
     """This function calculates the cost function for the quantum circuit.
 
     Args:
-        weights (np.array): The weights for the circuit (The quantum part of the model)
-        bias (np.array): The bias for the circuit (The classical part of the model)
-        X (np.array): The observational data to apply the circuit to. This will be the angles we got from the the state preparation circuit.
-        Y (np.array): The true labels
+        - weights (np.array): The weights for the circuit (The quantum part of the model)
+        - bias (np.array): The bias for the circuit (The classical part of the model)
+        - X (np.array): The observational data to apply the circuit to. This will be the angles we got from the the state preparation circuit.
+        - Y (np.array): The true labels
 
     Returns:
-        float: The cost function for the quantum circuit
+        - float: The cost function for the quantum circuit
     """    
     # Transpose the batch of input data in order to make the indexing
     # in state_preparation work
@@ -143,22 +143,22 @@ def apply_model(
     """This function applies the quantum model to the given data. The model is trained using the given data and tries to optimize the weights and bias to get the best possible model.
 
     Args:
-        X (np.array | pd.Dataframe): The observational data without the target variable.
-        Y (np.array | pd.Dataframe): The target variable (for classification).
-        weights_init (np.array, optional): The initial weights for the circuit. Defaults to None, it will be randomly generated.
-        bias_init (np.array, optional): The initial bias for the circuit. Defaults to None, it will be randomly generated.
-        steps (int, optional): The number of steps to train the model. Defaults to 100.
-        batch_size_percent (float, optional): The percentage of the training data to use in each batch for the QML model steps. Defaults to 0.5.
-        split_per (float, optional): The percentage of the data to use for the training set (the training-testing split percentage). Defaults to 0.4.
-        isPlot (bool, optional): Whether to plot the dimensionality reduction data, the normalized+padded data, the feature vectors, the circuit, the confusion matrix, and the decision boundary of the final model with the predicted labels. Defaults to False.
-        isDebug (bool, optional): Whether to print out debug information or not. Defaults to False. Can be useful not for debugging but for understanding the process too. 
-        dim_reduce_type (str | None, optional) : The type of dimension reduction to apply to the data. The options are: 'trimap', 'pacmap', 'tsne', 'pca', 'none', None. Defaults to None.
-        smoothness (int, optional): The smoothness of the final grid plot which will be used in the decision boundary plot. Defaults to 100.
-        seed (int, optional): The seed for the random number generator. Defaults to 42.
+        - X (np.array | pd.Dataframe): The observational data without the target variable.
+        - Y (np.array | pd.Dataframe): The target variable (for classification).
+        - weights_init (np.array, optional): The initial weights for the circuit. Defaults to None, it will be randomly generated.
+        - bias_init (np.array, optional): The initial bias for the circuit. Defaults to None, it will be randomly generated.
+        - steps (int, optional): The number of steps to train the model. Defaults to 100.
+        - batch_size_percent (float, optional): The percentage of the training data to use in each batch for the QML model steps. Defaults to 0.5.
+        - split_per (float, optional): The percentage of the data to use for the training set (the training-testing split percentage). Defaults to 0.4.
+        - isPlot (bool, optional): Whether to plot the dimensionality reduction data, the normalized+padded data, the feature vectors, the circuit, the confusion matrix, and the decision boundary of the final model with the predicted labels. Defaults to False.
+        - isDebug (bool, optional): Whether to print out debug information or not. Defaults to False. Can be useful not for debugging but for understanding the process too. 
+        - dim_reduce_type (str | None, optional) : The type of dimension reduction to apply to the data. The options are: 'trimap', 'pacmap', 'tsne', 'pca', 'none', None. Defaults to None.
+        - smoothness (int, optional): The smoothness of the final grid plot which will be used in the decision boundary plot. Defaults to 100.
+        - seed (int, optional): The seed for the random number generator. Defaults to 42.
 
     Raises:
-        ValueError: If the batch_size_percent or split_per are not between 0 and 1.
-        ValueError: If the dim_reduce_type is not one of the supported types.
+        - ValueError: If the batch_size_percent or split_per are not between 0 and 1.
+        - ValueError: If the dim_reduce_type is not one of the supported types.
 
     Returns:
         Tuple[np.array, np.array, np.array, np.array]:
