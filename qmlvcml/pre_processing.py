@@ -12,10 +12,10 @@ import trimap
 import pacmap
 
 
-from typing import Tuple
+from typing import Tuple, Union
 
 # for transfrom_X the type is optional, and also takes in None or a string
-def transform_X(X: pd.DataFrame, type: str | None = None) -> np.array:
+def transform_X(X: pd.DataFrame, type: Union[str, None] = None) -> np.array:
     """
     This function takes in a pandas dataframe or a regular numpy array and returns a pennylane numpy array.
     The function can also transform the data using a specified method to reduce the dimensions: 'trimap', 'pacmap', 'tsne', 'pca'.
