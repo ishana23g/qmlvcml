@@ -1,16 +1,18 @@
 import pandas as pd
 import os
 
+from typing import Union, Optional, Tuple
+
 
 def read_data(file_path: str, y_col_name: str) -> tuple[pd.DataFrame, pd.Series]:
     """Read the data and return the features and target variables.
 
     Args:
-        file_path (str): The path to the data file.
-        y_col_name (str): The name of the column that contains the target variable.
+        - file_path (str): The path to the data file.
+        - y_col_name (str): The name of the column that contains the target variable.
 
     Raises:
-        ValueError: If the target column is not found in the dataframe.
+        - ValueError: If the target column is not found in the dataframe.
 
     Returns:
         tuple[pd.DataFrame, pd.Series]:

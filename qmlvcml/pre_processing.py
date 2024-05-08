@@ -12,24 +12,23 @@ import trimap
 import pacmap
 
 
+from typing import Union, Optional, Tuple
+
 def transform_X(X: pd.DataFrame, type=None) -> np.array:
-    """
-    This function takes in a pandas dataframe or a regular numpy array and returns a pennylane numpy array.
+    """This function takes in a pandas dataframe or a regular numpy array and returns a pennylane numpy array.
     The function can also transform the data using a specified method to reduce the dimensions: 'trimap', 'pacmap', 'tsne', 'pca'.
-    
-    Parameters:
-    -----------
-    X: pd.DataFrame
-        The input data
-    type: str or None
-        The type of transformation to apply to the data. 
-        The options are: 'trimap', 'pacmap', 'tsne', 'pca', 'none', None
+
+    Args:
+        - X (pd.DataFrame): The input data (observations) in a pandas dataframe.
+        - type (str | None, optional): The type of transformation to apply to the data. The possible options are: `'trimap', 'pacmap', 'tsne', 'pca', 'none', None.` Defaults to None.
+
+    Raises:
+        - ValueError: If the input data is not a pandas dataframe.
+        - ValueError: If the type is not one of the specified options.
 
     Returns:
-    --------
-    np.array
-        The transformed data
-    """ 
+        - np.array: The transformed data which is also scaled. Note that the data is now a pennylane numpy array.
+    """    
     if not isinstance(X, (pd.DataFrame)):
         raise ValueError("X must be a pandas dataframe")
     
@@ -54,8 +53,24 @@ def transform_X(X: pd.DataFrame, type=None) -> np.array:
 
 
 def train_test_split_custom(df, y_col, test_size: float = 0.2, random_state: int = 42):
+    """Split the data into training and testing sets.
+
+    Args:
+        df (_type_): _description_
+        y_col (_type_): _description_
+        test_size (float, optional): _description_. Defaults to 0.2.
+        random_state (int, optional): _description_. Defaults to 42.
+
+    Raises:
+        ValueError: _description_
+        KeyError: _description_
+
+    Returns:
+        _type_: _description_
+    """    
+
     """
-    Split the data into training and testing sets.
+    
 
     Parameters
     ----------
@@ -92,7 +107,7 @@ def train_test_split_custom(df, y_col, test_size: float = 0.2, random_state: int
         X = df
         y = y_col
 
-    X = np.array(X)
+    X = np.array(X, requires_grad=False)
     X = scale_data(X)
     y, _ = binary_classifier(y)
 
