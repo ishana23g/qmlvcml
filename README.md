@@ -9,6 +9,11 @@ This package is to use a dataset and compare a Quantum based Classifier that is 
 
 The dataset by default that this package has access to is from [Kaggle Banana Dataset](https://www.kaggle.com/datasets/l3llff/banana)
 
+To install on terminal be in the package folder and run 
+```
+pip install -e .
+```
+
 ### Copyright
 
 Copyright (c) 2024, Ishana Garuda
