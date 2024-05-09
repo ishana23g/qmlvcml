@@ -9,9 +9,43 @@ This package is to use a dataset and compare a Quantum based Classifier that is 
 
 The dataset by default that this package has access to is from [Kaggle Banana Dataset](https://www.kaggle.com/datasets/l3llff/banana)
 
-To install on terminal be in the package folder and run 
+Installation
+============
+
+To install this package, you first need to clone this repository.
+And once you are inside the repository, you can install the package using the following command:
+
 ```
-pip install -e .
+        pip install -e .
+```
+
+
+Stuff you can do:
+===============
+
+A simple example of how to use the package is shown below.
+
+First we want to load some data to be classified. This can be done using the following command:
+
+```
+        import qmlvcml 
+        banana_df_X, banana_df_y = qmlvcml.load_banana_data()
+```
+
+Then we can apply the Variational Classifier using the following command:
+
+```
+        qmlvcml.apply_model(banana_df_X, banana_df_y, steps=50,
+                     batch_size_percent=.8, isPlot=True, isDebug=False,
+                     dim_reduce_type='trimap')
+```
+
+For the the classical algorithm (SVMs) we can use the following command:
+
+```
+        import pandas as pd
+        banana_df = pd.concat([banana_df_X, banana_df_y], axis=1)
+        model, confusion = qmlvcml.apply_svm(banana_df, 'Quality', isPlot=True)
 ```
 
 ### Copyright
