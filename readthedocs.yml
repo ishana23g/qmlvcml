@@ -15,6 +15,10 @@ build:
       - echo "Command run at 'post_build' step"
       - echo `date`
     
+python:
+  install:
+  - requirements: docs/requirements.txt
+
 sphinx:
   builder: html
   configuration: docs/conf.py
